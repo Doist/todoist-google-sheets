@@ -1,0 +1,19 @@
+{
+  "name": "todoist-google-sheets",
+  "version": "1.0.0",
+  "description": "UI Extension for Todoist that exports projects to Google Sheets",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Doist/todoist-google-sheets.git"
+  },
+  "author": "Doist Developers",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Doist/todoist-google-sheets/issues"
+  },
+  "homepage": "https://github.com/Doist/todoist-google-sheets#readme"
+}

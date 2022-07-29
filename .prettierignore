@@ -1,0 +1,4 @@
+node_modules
+dist
+*.hbs
+twist-zoom/public/zoomverify/verifyzoom.html
