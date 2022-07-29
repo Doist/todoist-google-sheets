@@ -4,6 +4,7 @@
     "description": "UI Extension for Todoist that exports projects to Google Sheets",
     "main": "index.js",
     "scripts": {
+        "clean": "rimraf dist",
         "test": "jest --passWithNoTests",
         "format-check": "npx prettier --check .",
         "format-fix": "npx prettier --write .",
