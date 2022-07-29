@@ -1,0 +1,29 @@
+name: Audit check
+on: pull_request
+
+# Only a single workflow will run at a time. Cancel any in-progress run.
+concurrency:
+    group: audit-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    audit:
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Configure doist package repository
+              uses: actions/setup-node@v3
+              with:
+                  node-version-file: '.nvmrc'
+                  scope: '@doist'
+                  registry-url: 'https://npm.pkg.github.com'
+
+            - name: Bootstrap
+              run: npm run bootstrap-dev
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+
+            - name: Run Audit Check
+              run: npm run audit --production

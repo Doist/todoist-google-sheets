@@ -1,0 +1,28 @@
+name: Google Sheets CI
+on:
+    pull_request:
+        paths:
+            - 'src/**'
+            - 'package.json'
+
+# Only a single workflow will run at a time. Cancel any in-progress run.
+concurrency:
+    group: google-sheets-ci-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    ci-google-sheets:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+
+            - name: Configure doist package repository
+              uses: actions/setup-node@v3
+              with:
+                  node-version: '16'
+
+            - name: Bootstrap
+              run: npm ci
+
+            - name: Run CI Check
+              run: npm run integrity-check
