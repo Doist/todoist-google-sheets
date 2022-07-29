@@ -12,11 +12,11 @@
 
 ## Creator Checklist
 
-- [ ] Reasonable test coverage
-- [ ] _(bugs)_ Re-test fix before asking for review
+-   [ ] Reasonable test coverage
+-   [ ] _(bugs)_ Re-test fix before asking for review
 
 ## Reviewer Checklist
 
-- [ ] Code-level review
-- [ ] Smoke testing
-- [ ] UX feedback (check if not applicable)
+-   [ ] Code-level review
+-   [ ] Smoke testing
+-   [ ] UX feedback (check if not applicable)
