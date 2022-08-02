@@ -35,12 +35,11 @@ First, install ts-node globally:
 
 `npm install -g ts-node`
 
-You can then run `npm run typeorm migration:create -- -d migrations -n <Name of the migration>`
+You can then run `npm run migration:create ./src/migrations/<name>` (name should be the migration name you want to give it, don't include spaces).
 This will create an empty migration in the `migrations` folder. You can go ahead and edit it there. The migrations are run at app start (this is set up via the Typeorm module in app.module.ts)
 
 There's also the option to let typeorm generate the migration for you automatically. In this case,
-you need an `ormconfig.json` file with all the connection details for the typeorm CLI to connect to the DB,
-and instead of `migration:create`, use the `migration:generate` command.
+you need to run `npm run migration:generate ./src/migrations/<name>` (name should be the migration name you want to give it, don't include spaces).
 For more information, visit https://typeorm.io/#/migrations
 
 ## Accessing your extension
