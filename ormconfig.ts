@@ -1,3 +1,6 @@
+/**
+ * This file is only required for generating migrations, it shouldn't need to be touched, ever.
+ */
 import { cwd, env } from 'process'
 
 import * as dotenv from 'dotenv'
