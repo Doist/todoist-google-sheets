@@ -1,6 +1,7 @@
 import { ExtensionVerificationGuard } from '@doist/ui-extensions-server'
 
 import { Test } from '@nestjs/testing'
+import request from 'supertest'
 
 import { AppModule } from './app.module'
 
@@ -28,11 +29,14 @@ describe('AppModule', () => {
 
     afterAll(() => app.close())
 
-    it('runs the server without crashing', async () => {
+    beforeAll(async () => {
         const { appModule } = await createTestApp()
-
         app = appModule
+    })
 
+    it('/GET /ping', () => request(app.getHttpServer()).get('/ping').expect(200).expect('pong'))
+
+    it('runs the server without crashing', () => {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const server = app.getHttpServer()
 
