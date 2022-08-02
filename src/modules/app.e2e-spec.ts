@@ -1,10 +1,12 @@
 import { ExtensionVerificationGuard } from '@doist/ui-extensions-server'
 
 import { Test } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
 import request from 'supertest'
 import { DataSource } from 'typeorm'
 
 import { mockConnection } from '../../test/mocks'
+import { User } from '../entities/user.entity'
 
 import { AppModule } from './app.module'
 
@@ -18,6 +20,8 @@ async function createTestApp(): Promise<{
     })
         .overrideProvider(DataSource)
         .useValue(mockConnection())
+        .overrideProvider(getRepositoryToken(User))
+        .useValue(jest.fn())
         .overrideGuard(ExtensionVerificationGuard)
         .useValue({ canActivate: () => true })
         .compile()
