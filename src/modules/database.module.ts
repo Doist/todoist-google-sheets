@@ -19,6 +19,6 @@ import { User } from '../entities/user.entity'
         TypeOrmModule.forFeature([User]),
     ],
     providers: [UserDatabaseService],
-    exports: [UserDatabaseService],
+    exports: [UserDatabaseService, TypeOrmModule],
 })
 export class DatabaseModule {}
