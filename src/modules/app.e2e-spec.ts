@@ -2,6 +2,9 @@ import { ExtensionVerificationGuard } from '@doist/ui-extensions-server'
 
 import { Test } from '@nestjs/testing'
 import request from 'supertest'
+import { DataSource } from 'typeorm'
+
+import { mockConnection } from '../../test/mocks'
 
 import { AppModule } from './app.module'
 
@@ -13,6 +16,8 @@ async function createTestApp(): Promise<{
     const moduleRef = await Test.createTestingModule({
         imports: [AppModule],
     })
+        .overrideProvider(DataSource)
+        .useValue(mockConnection())
         .overrideGuard(ExtensionVerificationGuard)
         .useValue({ canActivate: () => true })
         .compile()
