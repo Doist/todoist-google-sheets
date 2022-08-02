@@ -19,6 +19,29 @@ To tailor your dev environment, create a `.env` file and put in the relevant set
 -   `PORT`: The port the backend will run on
 -   `BASE_URL`: This is the domain for accessing static files (like images)
 -   `VERIFICATION_TOKENS`: This is the comma-separated list of valid tokens the integration will require to validate when it's called.
+-   `DB_HOST`: Database host
+-   `DB_PORT`: Database port
+-   `DB_USERNAME`: Database username
+-   `DB_PASSWORD`: Database password
+-   `DB_ENCRYPTION_KEY`: The db is encrypting sensitive columns, provide the key here.
+-   `DB_ENCRYPTION_ALGORITHM`: The algorithm used for the encryption.
+-   `DB_ENCRYPTION_IV_LENGTH`: The length of the initialization vector used by the encryption.
+
+### Migrations
+
+If the database model changes, you need to create a new migration.
+
+First, install ts-node globally:
+
+`npm install -g ts-node`
+
+You can then run `npm run typeorm migration:create -- -d migrations -n <Name of the migration>`
+This will create an empty migration in the `migrations` folder. You can go ahead and edit it there. The migrations are run at app start (this is set up via the Typeorm module in app.module.ts)
+
+There's also the option to let typeorm generate the migration for you automatically. In this case,
+you need an `ormconfig.json` file with all the connection details for the typeorm CLI to connect to the DB,
+and instead of `migration:create`, use the `migration:generate` command.
+For more information, visit https://typeorm.io/#/migrations
 
 ## Accessing your extension
 
