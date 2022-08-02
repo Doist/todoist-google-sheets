@@ -3,7 +3,6 @@ import {
     AuthenticatedUser,
     AuthenticationClient,
     StateService,
-    UserDatabaseService,
 } from '@doist/ui-extensions-server'
 
 import { HttpService } from '@nestjs/axios'
@@ -14,7 +13,7 @@ import { lastValueFrom } from 'rxjs'
 
 import { getConfiguration } from '../config/configuration'
 
-import type { User } from '../entities/user.entity'
+import { UserDatabaseService } from './user-database.service'
 
 const scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
@@ -30,7 +29,7 @@ const TOKEN_INFO = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
 @Injectable()
 export class GoogleSheetsService extends AuthenticationClient {
     constructor(
-        private readonly dbService: UserDatabaseService<User>,
+        private readonly dbService: UserDatabaseService,
         stateService: StateService,
         private readonly httpService: HttpService,
     ) {
@@ -39,6 +38,12 @@ export class GoogleSheetsService extends AuthenticationClient {
     }
 
     private apiKey: string
+
+    async isAuthenticated(twistId: number): Promise<boolean> {
+        const user = await this.dbService.getUser(twistId)
+
+        return Boolean(user?.authToken)
+    }
 
     getAuthorizationUrl(userId: number): string {
         return this.oauthClient.generateAuthUrl({

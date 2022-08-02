@@ -1,18 +1,22 @@
 import {
+    ActionsService as ActionsServiceBase,
     AdaptiveCardService as AdaptiveCardServiceBase,
     AuthenticationClient,
     AuthModule,
     CoreModule,
     LoginService,
     TokenValidator,
-    UserDatabaseService,
+    UserDatabaseService as UserDatabaseServiceBase,
 } from '@doist/ui-extensions-server'
 
 import { Module } from '@nestjs/common'
 
+import { AppController } from '../controllers/app.controller'
+import { ActionsService } from '../services/actions.service'
 import { AdaptiveCardService } from '../services/adaptive-card.service'
 import { GoogleLoginService } from '../services/google-login.service'
 import { GoogleSheetsService } from '../services/google-sheets.service'
+import { UserDatabaseService } from '../services/user-database.service'
 
 import { ConfigurationModule } from './configuration.module'
 import { DatabaseModule } from './database.module'
@@ -68,8 +72,24 @@ import { DatabaseModule } from './database.module'
             provide: AdaptiveCardServiceBase,
             useExisting: AdaptiveCardService,
         },
+        {
+            provide: ActionsServiceBase,
+            useExisting: ActionsService,
+        },
+        {
+            provide: UserDatabaseServiceBase,
+            useExisting: UserDatabaseService,
+        },
         UserDatabaseService,
+        ActionsService,
     ],
-    exports: [AdaptiveCardService, AdaptiveCardServiceBase, UserDatabaseService],
+    controllers: [AppController],
+    exports: [
+        AdaptiveCardService,
+        AdaptiveCardServiceBase,
+        UserDatabaseService,
+        UserDatabaseServiceBase,
+        ActionsService,
+    ],
 })
 export class AppModule {}
