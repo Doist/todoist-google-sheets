@@ -36,10 +36,5 @@ describe('AppModule', () => {
 
     it('/GET /ping', () => request(app.getHttpServer()).get('/ping').expect(200).expect('pong'))
 
-    it('runs the server without crashing', () => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const server = app.getHttpServer()
-
-        expect(server).toBeDefined()
-    })
+    it('runs the server without crashing', () => expect(app.getHttpServer()).toBeDefined())
 })
