@@ -6,7 +6,6 @@ import {
 } from '@doist/ui-extensions-server'
 
 import { Injectable } from '@nestjs/common'
-// import { CardActions as SheetsCardActions } from '../constants/card-actions'
 
 @Injectable()
 export class AdaptiveCardService extends AdaptiveCardServiceBase {
