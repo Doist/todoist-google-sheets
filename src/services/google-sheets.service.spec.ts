@@ -34,7 +34,7 @@ describe('GoogleSheetsService', () => {
             jest.spyOn(target['stateService'], 'createState').mockReturnValue('state')
 
             expect(target.getAuthorizationUrl(1)).toEqual(
-                'https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fspreadsheets&state=state&access_type=offline&prompt=consent&response_type=code&client_id=lskdfjsldkfjs&redirect_uri=https%3A%2F%2Ftwist-test.todoist.net%2Fauth',
+                'https://accounts.google.com/o/oauth2/v2/auth?scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.profile%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fuserinfo.email%20https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fspreadsheets&state=state&access_type=offline&prompt=consent&response_type=code&client_id=lskdfjsldkfjs&redirect_uri=https%3A%2F%2Ftodoist-test.todoist.net%2Fauth',
             )
         })
     })
