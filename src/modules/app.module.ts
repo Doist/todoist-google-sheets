@@ -12,6 +12,7 @@ import {
 import { Module } from '@nestjs/common'
 
 import { AppController } from '../controllers/app.controller'
+import { Sheets } from '../i18n/en'
 import { ActionsService } from '../services/actions.service'
 import { AdaptiveCardService } from '../services/adaptive-card.service'
 import { GoogleLoginService } from '../services/google-login.service'
@@ -30,9 +31,11 @@ import { DatabaseModule } from './database.module'
             imports: [AppModule],
             success: {
                 imageSrc: '/images/google-success.png',
+                altText: Sheets.LOGIN_SUCCESSFUL,
             },
             error: {
                 imageSrc: '/images/google-error.png',
+                helpCenterLink: Sheets.HELP_CENTER_LINK,
             },
             providers: [
                 LoginService,
@@ -57,9 +60,9 @@ import { DatabaseModule } from './database.module'
                 {
                     provide: LoginService.OPTIONS,
                     useValue: {
-                        loginTitle: 'Sign in with Google',
-                        loginInstructions: 'Please sign in with your Google account.',
-                        learnMoreLink: 'https://todoist.com/help',
+                        loginTitle: Sheets.LOGIN_TITLE,
+                        loginInstructions: Sheets.LOGIN_INSTRUCTIONS,
+                        learnMoreLink: Sheets.LEARN_MORE_LINK,
                     },
                 },
             ],

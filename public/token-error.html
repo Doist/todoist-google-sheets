@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="robots" content="noindex" />
+        <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+        <title>Please try authorizing again</title>
+        <style>
+            body {
+                background-color: white;
+                margin: 0;
+            }
+
+            h1,
+            p {
+                margin: 0px;
+                padding: 0px;
+                color: #202020;
+                font-size: 20px;
+                font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial,
+                    sans-serif;
+                text-align: center;
+                max-width: 550px;
+            }
+
+            h1 {
+                font-size: 24px;
+                font-weight: 700;
+                padding-bottom: 12px;
+            }
+
+            p {
+                font-weight: 400;
+            }
+
+            .mainBody {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                margin-top: 90px;
+                padding: 12px;
+            }
+
+            .primaryImage {
+                display: block;
+                margin: 32px auto 0px auto;
+                border: 2px solid rgb(221, 226, 227);
+                border-radius: 5px;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="mainBody">
+            <h1>Problem accessing your account</h1>
+            <p>
+                In order for this integration to work, ensure that the bottom two boxes are ticked,
+                as shown in the picture below. Please try authorizing your account again.
+            </p>
+            <img
+                class="primaryImage"
+                src="/images/GoogleScopeError.png"
+                alt="Please tick the boxes to allow viewing and editing spreadsheets."
+            />
+        </div>
+    </body>
+</html>
