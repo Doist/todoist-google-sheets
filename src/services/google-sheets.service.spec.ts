@@ -2,23 +2,28 @@ import { StateService } from '@doist/ui-extensions-server'
 
 import { HttpModule } from '@nestjs/axios'
 import { Test } from '@nestjs/testing'
+import { getRepositoryToken } from '@nestjs/typeorm'
 import { of } from 'rxjs'
 
-import { DatabaseModule } from '../modules/database.module'
+import { User } from '../entities/user.entity'
 
 import { GoogleSheetsService, TokenInfo } from './google-sheets.service'
 import { UserDatabaseService } from './user-database.service'
 
 import type { AxiosResponse } from 'axios'
-import type { User } from '../entities/user.entity'
 
 describe('GoogleSheetsService', () => {
     let target: GoogleSheetsService
 
     beforeEach(async () => {
         const moduleRef = await Test.createTestingModule({
-            imports: [HttpModule, DatabaseModule],
-            providers: [GoogleSheetsService, UserDatabaseService, StateService],
+            imports: [HttpModule],
+            providers: [
+                GoogleSheetsService,
+                UserDatabaseService,
+                StateService,
+                { provide: getRepositoryToken(User), useFactory: jest.fn() },
+            ],
         }).compile()
 
         target = await moduleRef.resolve(GoogleSheetsService)
