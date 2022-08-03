@@ -18,12 +18,9 @@ jobs:
               with:
                   node-version-file: '.nvmrc'
                   scope: '@doist'
-                  registry-url: 'https://npm.pkg.github.com'
 
             - name: Bootstrap
-              run: npm run bootstrap-dev
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+              run: npm i
 
             - name: Run Audit Check
               run: npm run audit --production
