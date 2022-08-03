@@ -27,6 +27,10 @@ To tailor your dev environment, create a `.env` file and put in the relevant set
 -   `DB_ENCRYPTION_ALGORITHM`: The algorithm used for the encryption.
 -   `DB_ENCRYPTION_IV_LENGTH`: The length of the initialization vector used by the encryption.
 
+### Database
+
+In order to run the database locally, please run `npm run database:run` and this will create a mysql docker container (if one doesn't already exist).
+
 ### Migrations
 
 If the database model changes, you need to create a new migration.
