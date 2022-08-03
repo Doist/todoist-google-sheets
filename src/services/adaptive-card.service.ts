@@ -1,4 +1,4 @@
-import { DoistCard, SubmitAction } from '@doist/ui-extensions-core'
+import { DoistCard, SubmitAction, TextBlock } from '@doist/ui-extensions-core'
 import {
     AdaptiveCardService as AdaptiveCardServiceBase,
     CardActions,
@@ -6,6 +6,8 @@ import {
 } from '@doist/ui-extensions-server'
 
 import { Injectable } from '@nestjs/common'
+
+import { Sheets } from '../i18n/en'
 
 @Injectable()
 export class AdaptiveCardService extends AdaptiveCardServiceBase {
@@ -17,6 +19,20 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         })
 
         card.addAction(action)
+
+        return card
+    }
+
+    projectOnlyCard(): DoistCard {
+        const card = this.createEmptyCard()
+
+        const projectOnlyInfo = TextBlock.from({
+            text: this.translationService.getTranslation(Sheets.PROJECT_ONLY),
+            horizontalAlignment: 'center',
+            spacing: 'extraLarge',
+        })
+
+        card.addItem(projectOnlyInfo)
 
         return card
     }

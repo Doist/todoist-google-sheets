@@ -11,7 +11,11 @@ import { GoogleLoginService } from './google-login.service'
 import { GoogleSheetsService } from './google-sheets.service'
 import { UserDatabaseService } from './user-database.service'
 
-import type { DoistCardRequest, DoistCardResponse } from '@doist/ui-extensions-core'
+import type {
+    ContextMenuData,
+    DoistCardRequest,
+    DoistCardResponse,
+} from '@doist/ui-extensions-core'
 
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
@@ -24,7 +28,17 @@ export class ActionsService extends ActionsServiceBase {
         super()
     }
 
+    private isFromProject(request: DoistCardRequest): boolean {
+        const contextData = request.action.params as ContextMenuData | undefined
+
+        return contextData?.source === 'project'
+    }
+
     async getInitialView(request: DoistCardRequest): Promise<DoistCardResponse> {
+        if (!this.isFromProject(request)) {
+            return { card: this.adaptiveCardsService.projectOnlyCard() }
+        }
+
         if (!(await this.googleSheetsService.isAuthenticated(request.context.user.id))) {
             return this.googleLoginService.getAuthentication(request.context, true)
         }

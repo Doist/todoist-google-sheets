@@ -4,4 +4,5 @@ export enum Sheets {
     LOGIN_INSTRUCTIONS = "Export your project's tasks straight to Google Sheets",
     LOGIN_SUCCESSFUL = 'Successfully logged into Google',
     LOGIN_TITLE = 'Log in with Google',
+    PROJECT_ONLY = 'This extension is only available for projects.',
 }
