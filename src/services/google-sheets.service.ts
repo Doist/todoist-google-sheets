@@ -21,7 +21,7 @@ const scopes = [
     'https://www.googleapis.com/auth/spreadsheets',
 ]
 
-type TokenInfo = {
+export type TokenInfo = {
     scope: string
 }
 const TOKEN_INFO = 'https://www.googleapis.com/oauth2/v1/tokeninfo'
