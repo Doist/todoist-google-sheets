@@ -9,12 +9,12 @@ describe('Input helpers', () => {
 
         it('should get the right values when provided', () => {
             const options = getExportOptions({
-                'Input.content': 'true',
+                'Input.description': 'true',
                 'Input.due': 'true',
                 'Input.priority': 'false',
             })
 
-            expect(options['content']).toBe(true)
+            expect(options['description']).toBe(true)
             expect(options['due']).toBe(true)
             expect(options['priority']).toBe(false)
         })
