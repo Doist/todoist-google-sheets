@@ -6,6 +6,8 @@ import {
 
 import { Injectable } from '@nestjs/common'
 
+import { CardActions as SheetsCardActions } from '../constants/card-actions'
+
 import { AdaptiveCardService } from './adaptive-card.service'
 import { GoogleLoginService } from './google-login.service'
 import { GoogleSheetsService } from './google-sheets.service'
@@ -72,8 +74,16 @@ export class ActionsService extends ActionsServiceBase {
         return { card }
     }
 
-    private getHomeCard(_request: DoistCardRequest): Promise<DoistCardResponse> {
-        const card = this.adaptiveCardsService.homeCard()
+    @Submit({ actionId: SheetsCardActions.Export })
+    export(_request: DoistCardRequest): Promise<DoistCardResponse> {
+        return Promise.resolve({})
+    }
+
+    private getHomeCard(request: DoistCardRequest): Promise<DoistCardResponse> {
+        const contextData = request.action.params as ContextMenuData
+        const card = this.adaptiveCardsService.homeCard({
+            projectName: contextData.content,
+        })
         return Promise.resolve({ card })
     }
 }
