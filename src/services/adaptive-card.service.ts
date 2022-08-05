@@ -46,7 +46,6 @@ type OptionsKeys = {
 const optionsTranslationKeys: OptionsKeys = {
     assignee: Options.ASSIGNEE,
     author: Options.AUTHOR,
-    content: Options.CONTENT,
     completed: Options.COMPLETED,
     createdDate: Options.CREATED_DATE,
     description: Options.DESCRIPTION,

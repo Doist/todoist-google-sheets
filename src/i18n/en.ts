@@ -12,7 +12,6 @@ export enum Sheets {
 }
 
 export enum Options {
-    CONTENT = 'Content',
     COMPLETED = 'Is completed',
     DUE = 'Due date',
     PRIORITY = 'Priority',
