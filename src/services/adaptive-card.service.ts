@@ -119,7 +119,7 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
             }),
         )
 
-        const [leftColumnItems, rightColumnItems] = chunk(toggleSwitches, 6)
+        const [leftColumnItems, rightColumnItems] = chunk(toggleSwitches, 5)
 
         leftColumnItems?.forEach((item) => leftColumn.addItem(item))
         rightColumnItems?.forEach((item) => rightColumn.addItem(item))
