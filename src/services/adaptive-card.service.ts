@@ -91,6 +91,72 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         return card
     }
 
+    settingsCard({ user }: { user: User }): DoistCard {
+        const card = this.createEmptyCard()
+        const header = this.createMainHeader({
+            leftColumnContent: createBackImageButton(
+                this,
+                undefined,
+                undefined,
+                CardActions.GoHome,
+            ),
+            rightColumnContent: createSignOutButton(this),
+            includeEmptySpacing: true,
+        })
+
+        card.addItem(header)
+
+        const profileDetails = createProfileDetails(
+            user,
+            this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NAME),
+            this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NO_NAME),
+        )
+        profileDetails.id = PROFILE_DETAILS_ID
+        card.addItem(profileDetails)
+
+        return card
+    }
+
+    noTasksCard({ projectName }: { projectName: string }): DoistCard {
+        const card = this.createEmptyCard()
+
+        card.addItem(
+            TextBlock.from({
+                text: formatString(
+                    this.translationService.getTranslation(Sheets.NO_TASKS),
+                    projectName,
+                ),
+                horizontalAlignment: 'center',
+                spacing: 'extraLarge',
+            }),
+        )
+
+        return card
+    }
+
+    private createMainHeader({
+        leftColumnContent,
+        middleColumnContent,
+        rightColumnContent,
+        includeEmptySpacing = false,
+    }: {
+        leftColumnContent?: CardElement
+        middleColumnContent?: CardElement
+        rightColumnContent?: CardElement
+        includeEmptySpacing?: boolean
+    } = {}): CardElement {
+        const leftColumn = leftColumnContent ? [leftColumnContent] : []
+        const middleColumn = middleColumnContent ? [middleColumnContent] : []
+        const rightColumn = rightColumnContent ? [rightColumnContent] : []
+        return createHeader(
+            this,
+            leftColumn,
+            middleColumn,
+            [autoColumnSet(rightColumn)],
+            includeEmptySpacing,
+        )
+    }
+
     private createExportOptions(): CardElement {
         const container = Container.from({
             spacing: 'medium',
@@ -129,54 +195,5 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         container.addItem(optionsHeader)
 
         return container
-    }
-
-    settingsCard({ user }: { user: User }): DoistCard {
-        const card = this.createEmptyCard()
-        const header = this.createMainHeader({
-            leftColumnContent: createBackImageButton(
-                this,
-                undefined,
-                undefined,
-                CardActions.GoHome,
-            ),
-            rightColumnContent: createSignOutButton(this),
-            includeEmptySpacing: true,
-        })
-
-        card.addItem(header)
-
-        const profileDetails = createProfileDetails(
-            user,
-            this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NAME),
-            this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NO_NAME),
-        )
-        profileDetails.id = PROFILE_DETAILS_ID
-        card.addItem(profileDetails)
-
-        return card
-    }
-
-    private createMainHeader({
-        leftColumnContent,
-        middleColumnContent,
-        rightColumnContent,
-        includeEmptySpacing = false,
-    }: {
-        leftColumnContent?: CardElement
-        middleColumnContent?: CardElement
-        rightColumnContent?: CardElement
-        includeEmptySpacing?: boolean
-    } = {}): CardElement {
-        const leftColumn = leftColumnContent ? [leftColumnContent] : []
-        const middleColumn = middleColumnContent ? [middleColumnContent] : []
-        const rightColumn = rightColumnContent ? [rightColumnContent] : []
-        return createHeader(
-            this,
-            leftColumn,
-            middleColumn,
-            [autoColumnSet(rightColumn)],
-            includeEmptySpacing,
-        )
     }
 }

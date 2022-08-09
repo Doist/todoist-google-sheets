@@ -82,7 +82,11 @@ export class ActionsService extends ActionsServiceBase {
         const tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
 
         if (tasks.length === 0) {
-            return this.getHomeCard(request)
+            return {
+                card: this.adaptiveCardsService.noTasksCard({
+                    projectName: contextData.content,
+                }),
+            }
         }
 
         // Only fetch sections if we're using them, otherwise it's a wasted call

@@ -52,6 +52,8 @@ describe('ActionsService', () => {
                 Promise.resolve([]),
             )
 
+            const noTasksCard = jest.spyOn(target['adaptiveCardsService'], 'noTasksCard')
+
             const exportToSheets = jest.spyOn(target['googleSheetsService'], 'exportToSheets')
 
             await target.export({
@@ -72,6 +74,7 @@ describe('ActionsService', () => {
             })
 
             expect(exportToSheets).not.toHaveBeenCalled()
+            expect(noTasksCard).toHaveBeenCalled()
         })
 
         it('does not make a call to get sections if sections not required', async () => {

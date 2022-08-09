@@ -6,6 +6,7 @@ export enum Sheets {
     LOGIN_SUCCESSFUL = 'Successfully logged into Google',
     LOGIN_TITLE = 'Log in with Google',
     MAIN_TITLE = 'Export **{0}**', // {0} is the project name
+    NO_TASKS = '**{0}** has no tasks to export', // {0} is the project name
     OPTIONS_HEADER = 'Choose which fields you want to export',
     PROFILE_DETAILS_WITH_NAME = 'You’re connected to Google as **{0}** ({1}).',
     PROFILE_DETAILS_WITH_NO_NAME = 'You’re connected to Google as **{0}**.',
