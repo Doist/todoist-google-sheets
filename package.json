@@ -87,6 +87,7 @@
     "prettier": "@doist/prettier-config",
     "dependencies": {
         "@doist/integrations-common": "1.0.17",
+        "@doist/todoist-api-typescript": "1.5.0",
         "@doist/ui-extensions-core": "3.2.1",
         "@doist/ui-extensions-server": "1.0.4",
         "@nestjs/axios": "0.1.0",

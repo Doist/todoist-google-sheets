@@ -9,6 +9,7 @@ export enum Sheets {
     OPTIONS_HEADER = 'Choose which fields you want to export',
     PROFILE_DETAILS_WITH_NAME = 'You’re connected to Google as **{0}** ({1}).',
     PROFILE_DETAILS_WITH_NO_NAME = 'You’re connected to Google as **{0}**.',
+    SHEET_TITLE = 'Todoist Export: {0} from {1}', // {0} is the project name, {1} is the date
 }
 
 export enum Options {
@@ -18,8 +19,6 @@ export enum Options {
     DESCRIPTION = 'Description',
     PARENT_TASK = 'Parent task',
     SECTION = 'Section',
-    AUTHOR = 'Author',
     ASSIGNEE = 'Assignee',
     CREATED_DATE = 'Created date',
-    TIMEZONE = 'Timezone',
 }

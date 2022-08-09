@@ -21,6 +21,11 @@ const scopes = [
     'https://www.googleapis.com/auth/spreadsheets',
 ]
 
+type ExportData = {
+    data: string
+    title: string
+}
+
 export type TokenInfo = {
     scope: string
 }
@@ -93,6 +98,10 @@ export class GoogleSheetsService extends AuthenticationClient {
             id: data.id,
             name: data.name,
         }
+    }
+
+    exportToSheets(_options: ExportData): Promise<void> {
+        return Promise.resolve()
     }
 
     private _oauthClient?: Auth.OAuth2Client

@@ -1,12 +1,19 @@
+import { formatString } from '@doist/integrations-common'
+import { TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
     CardActions,
     Submit,
+    TranslationService,
 } from '@doist/ui-extensions-server'
 
 import { Injectable } from '@nestjs/common'
 
+import { getConfiguration } from '../config/configuration'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
+import { Sheets } from '../i18n/en'
+import { convertTasksToCsvString } from '../utils/csv-helpers'
+import { getExportOptions } from '../utils/input-helpers'
 
 import { AdaptiveCardService } from './adaptive-card.service'
 import { GoogleLoginService } from './google-login.service'
@@ -26,6 +33,7 @@ export class ActionsService extends ActionsServiceBase {
         private readonly googleLoginService: GoogleLoginService,
         private readonly adaptiveCardsService: AdaptiveCardService,
         private readonly userDatabaseService: UserDatabaseService,
+        private readonly translationService: TranslationService,
     ) {
         super()
     }
@@ -65,8 +73,40 @@ export class ActionsService extends ActionsServiceBase {
     }
 
     @Submit({ actionId: SheetsCardActions.Export })
-    export(_request: DoistCardRequest): Promise<DoistCardResponse> {
-        return Promise.resolve({})
+    async export(request: DoistCardRequest): Promise<DoistCardResponse> {
+        const contextData = request.action.params as ContextMenuData
+        const todoistClient = new TodoistApi(getConfiguration().todoistAuthToken)
+
+        const exportOptions = getExportOptions(request.action.inputs)
+
+        const tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
+
+        // Only fetch sections if we're using them, otherwise it's a wasted call
+        const sections = exportOptions['section']
+            ? await todoistClient.getSections(contextData.sourceId)
+            : []
+
+        const csvData = convertTasksToCsvString({
+            tasks,
+            sections,
+            exportOptions,
+        })
+
+        await this.googleSheetsService.exportToSheets({
+            title: this.createSheetName(contextData.content),
+            data: csvData,
+        })
+
+        // TODO: SJL: Show success card
+        return this.getHomeCard(request)
+    }
+
+    private createSheetName(projectName: string): string {
+        return formatString(
+            this.translationService.getTranslation(Sheets.SHEET_TITLE),
+            projectName,
+            new Date().toLocaleDateString(),
+        )
     }
 
     private getHomeCard(request: DoistCardRequest): Promise<DoistCardResponse> {

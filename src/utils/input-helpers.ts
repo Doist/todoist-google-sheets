@@ -1,9 +1,9 @@
-import { type ExportOptions, ExportOptionsNames } from '../types'
+import { ExportOptionsNames, ExportOptionsToUse } from '../types'
 
 import type { DoistCardActionInputs } from '@doist/ui-extensions-core'
 
-export function getExportOptions(inputs?: DoistCardActionInputs) {
-    const options = {} as Record<ExportOptions, boolean>
+export function getExportOptions(inputs?: DoistCardActionInputs): ExportOptionsToUse {
+    const options = {} as ExportOptionsToUse
     if (inputs) {
         ExportOptionsNames.forEach((option) => {
             const id = `Input.${option}`

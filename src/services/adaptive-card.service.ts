@@ -45,7 +45,6 @@ type OptionsKeys = {
 
 const optionsTranslationKeys: OptionsKeys = {
     assignee: Options.ASSIGNEE,
-    author: Options.AUTHOR,
     completed: Options.COMPLETED,
     createdDate: Options.CREATED_DATE,
     description: Options.DESCRIPTION,
@@ -53,7 +52,6 @@ const optionsTranslationKeys: OptionsKeys = {
     priority: Options.PRIORITY,
     parentTask: Options.PARENT_TASK,
     section: Options.SECTION,
-    timezone: Options.TIMEZONE,
 }
 
 @Injectable()
@@ -116,7 +114,10 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
             }),
         )
 
-        const [leftColumnItems, rightColumnItems] = chunk(toggleSwitches, 5)
+        const [leftColumnItems, rightColumnItems] = chunk(
+            toggleSwitches,
+            (toggleSwitches.length / 2) | 0,
+        )
 
         leftColumnItems?.forEach((item) => leftColumn.addItem(item))
         rightColumnItems?.forEach((item) => rightColumn.addItem(item))

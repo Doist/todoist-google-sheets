@@ -5,10 +5,8 @@ export const ExportOptionsNames = [
     'description',
     'parentTask',
     'section',
-    'author',
     'assignee',
     'createdDate',
-    'timezone',
 ] as const
 
 export const NonOptionalExportOptionsNames = [
