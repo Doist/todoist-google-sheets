@@ -46,6 +46,24 @@ There's also the option to let typeorm generate the migration for you automatica
 you need to run `npm run migration:generate ./src/migrations/<name>` (name should be the migration name you want to give it, don't include spaces).
 For more information, visit https://typeorm.io/#/migrations
 
+### Google App developer account setup
+
+1. Create a new Google app (click the dropdown next to the page title, then choose New Project) [link](https://console.cloud.google.com/apis/dashboard)
+2. Give the project a name, then click `Create`
+3. Once created, select that app, then click on `Enable APIs and Services`
+4. Search for "Sheets" then click on the Google Sheets API result, then Enable it
+5. Go back to the [dashboard](https://console.cloud.google.com/apis/dashboard) and click on `OAuth consent screen` down the left hand side
+6. Choose `External`, then click `Create`.
+7. Fill in the app details, if running locally, provide your ngrok link in the authorized domains, click `Save and continue`
+8. Click `Add or remove scopes`, the scopes you need are `/auth/userinfo.profile`, `/auth/userinfo.email`, and `auth/spreadsheets`. Click `Save and continue`
+9. Click `Add Users` and add your email address (and any others that may need access). Click `Save and Continue`, then `Back to dashboard`
+10. On the left hand menu, click `Credentials`
+11. Click `Create Credentials`, then API Key, copy the value provided and put it in your .env file
+12. Click `Create Credentials` again, then click `OAuth Client Id`.
+13. Application type should be "Web application", then fill in the remaining details. _Authorized redirect URIs_ to be `[BASE_URL from .env file]/auth`. Click `Create`
+
+Note _Client ID_ and _Client Secret_ add them to `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
 ## Accessing your extension
 
 You will need to use something like [ngrok](https://ngrok.com/), or [localtunnel](http://localtunnel.github.io/www/), in order for Todoist to be able to access your backend. Whichever service you use, the resulting URL is what should be used in the `BASE_URL` setting. It will also be what you add to your UI Extension in your integration at the [App Console](https://todoist.com/app_console). For this extension it will be `<Your Base URL>/process`.
