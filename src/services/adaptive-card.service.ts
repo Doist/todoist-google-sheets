@@ -25,6 +25,8 @@ import { Sheets } from '../i18n/en'
 
 import type { User } from '../entities/user.entity'
 
+export const PROFILE_DETAILS_ID = 'profile-details'
+
 @Injectable()
 export class AdaptiveCardService extends AdaptiveCardServiceBase {
     homeCard(): DoistCard {
@@ -59,13 +61,14 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         })
 
         card.addItem(header)
-        card.addItem(
-            createProfileDetails(
-                user,
-                this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NAME),
-                this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NO_NAME),
-            ),
+
+        const profileDetails = createProfileDetails(
+            user,
+            this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NAME),
+            this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NO_NAME),
         )
+        profileDetails.id = PROFILE_DETAILS_ID
+        card.addItem(profileDetails)
 
         return card
     }
