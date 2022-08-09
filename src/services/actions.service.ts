@@ -81,6 +81,10 @@ export class ActionsService extends ActionsServiceBase {
 
         const tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
 
+        if (tasks.length === 0) {
+            return this.getHomeCard(request)
+        }
+
         // Only fetch sections if we're using them, otherwise it's a wasted call
         const sections = exportOptions['section']
             ? await todoistClient.getSections(contextData.sourceId)
