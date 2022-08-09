@@ -51,4 +51,34 @@ describe('Settings e2e tests', () => {
                 )
             })
     })
+
+    it('has a settings button on the home page', () => {
+        jest.spyOn(UserDatabaseService.prototype, 'getUser').mockImplementationOnce(() =>
+            Promise.resolve({
+                name: 'Ian Malcolm',
+                emailAddress: 'ian@ingen.com',
+                authToken: 'kwijibo',
+            } as User),
+        )
+
+        return request(app.getHttpServer())
+            .post('/process')
+            .send({
+                context: { user: { id: 42 }, theme: 'light' },
+                action: {
+                    actionType: 'initial',
+                    params: {
+                        source: 'task',
+                    },
+                },
+            })
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+                const body = response.body as DoistCardResponse
+                expect(body.card).toBeDefined()
+
+                expect(JSON.stringify(body)).toMatch(/"id":"Action.Settings"/)
+            })
+    })
 })
