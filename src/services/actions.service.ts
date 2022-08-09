@@ -55,7 +55,7 @@ export class ActionsService extends ActionsServiceBase {
             return this.googleLoginService.getAuthentication(context)
         }
         const card = this.adaptiveCardsService.settingsCard({ user })
-        return Promise.resolve({ card })
+        return { card }
     }
 
     private getHomeCard(_request: DoistCardRequest): Promise<DoistCardResponse> {
