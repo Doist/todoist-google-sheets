@@ -61,6 +61,17 @@ export class ActionsService extends ActionsServiceBase {
         return this.googleLoginService.getAuthentication(request.context)
     }
 
+    @Submit({ actionId: CardActions.Settings })
+    async getSettingsCard(request: DoistCardRequest): Promise<DoistCardResponse> {
+        const { context } = request
+        const user = await this.userDatabaseService.getUser(context.user.id)
+        if (!user) {
+            return this.googleLoginService.getAuthentication(context)
+        }
+        const card = this.adaptiveCardsService.settingsCard({ user })
+        return Promise.resolve({ card })
+    }
+
     private getHomeCard(_request: DoistCardRequest): Promise<DoistCardResponse> {
         const card = this.adaptiveCardsService.homeCard()
         return Promise.resolve({ card })

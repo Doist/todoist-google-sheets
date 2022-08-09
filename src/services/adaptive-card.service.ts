@@ -11,8 +11,11 @@ import {
     autoColumnSet,
     CardActions,
     Core,
+    createBackImageButton,
     createHeader,
     createIconImage,
+    createProfileDetails,
+    createSignOutButton,
     SETTINGS_IMAGE,
 } from '@doist/ui-extensions-server'
 
@@ -20,12 +23,14 @@ import { Injectable } from '@nestjs/common'
 
 import { Sheets } from '../i18n/en'
 
+import type { User } from '../entities/user.entity'
+
 @Injectable()
 export class AdaptiveCardService extends AdaptiveCardServiceBase {
     homeCard(): DoistCard {
         const card = this.createEmptyCard()
         const header = this.createMainHeader({
-            leftColumnContent: createIconImage(this, {
+            rightColumnContent: createIconImage(this, {
                 imagePath: SETTINGS_IMAGE,
                 altText: this.translationService.getTranslation(Core.SETTINGS_TITLE),
                 selectAction: SubmitAction.from({
@@ -36,6 +41,31 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         })
 
         card.addItem(header)
+
+        return card
+    }
+
+    settingsCard({ user }: { user: User }): DoistCard {
+        const card = this.createEmptyCard()
+        const header = this.createMainHeader({
+            leftColumnContent: createBackImageButton(
+                this,
+                undefined,
+                undefined,
+                CardActions.GoHome,
+            ),
+            rightColumnContent: createSignOutButton(this),
+            includeEmptySpacing: true,
+        })
+
+        card.addItem(header)
+        card.addItem(
+            createProfileDetails(
+                user,
+                this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NAME),
+                this.translationService.getTranslation(Sheets.PROFILE_DETAILS_WITH_NO_NAME),
+            ),
+        )
 
         return card
     }
