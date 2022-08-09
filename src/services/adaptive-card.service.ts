@@ -1,4 +1,5 @@
 import {
+    CardElement,
     DoistCard,
     OpenUrlAction,
     RichTextBlock,
@@ -7,8 +8,12 @@ import {
 } from '@doist/ui-extensions-core'
 import {
     AdaptiveCardService as AdaptiveCardServiceBase,
+    autoColumnSet,
     CardActions,
     Core,
+    createHeader,
+    createIconImage,
+    SETTINGS_IMAGE,
 } from '@doist/ui-extensions-server'
 
 import { Injectable } from '@nestjs/common'
@@ -19,12 +24,18 @@ import { Sheets } from '../i18n/en'
 export class AdaptiveCardService extends AdaptiveCardServiceBase {
     homeCard(): DoistCard {
         const card = this.createEmptyCard()
-        const action = SubmitAction.from({
-            id: CardActions.LogOut,
-            title: this.translationService.getTranslation(Core.LOGOUT),
+        const header = this.createMainHeader({
+            leftColumnContent: createIconImage(this, {
+                imagePath: SETTINGS_IMAGE,
+                altText: this.translationService.getTranslation(Core.SETTINGS_TITLE),
+                selectAction: SubmitAction.from({
+                    id: CardActions.Settings,
+                }),
+            }),
+            includeEmptySpacing: true,
         })
 
-        card.addAction(action)
+        card.addItem(header)
 
         return card
     }
@@ -55,5 +66,28 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         card.addItem(projectOnly)
 
         return card
+    }
+
+    private createMainHeader({
+        leftColumnContent,
+        middleColumnContent,
+        rightColumnContent,
+        includeEmptySpacing = false,
+    }: {
+        leftColumnContent?: CardElement
+        middleColumnContent?: CardElement
+        rightColumnContent?: CardElement
+        includeEmptySpacing?: boolean
+    } = {}): CardElement {
+        const leftColumn = leftColumnContent ? [leftColumnContent] : []
+        const middleColumn = middleColumnContent ? [middleColumnContent] : []
+        const rightColumn = rightColumnContent ? [rightColumnContent] : []
+        return createHeader(
+            this,
+            leftColumn,
+            middleColumn,
+            [autoColumnSet(rightColumn)],
+            includeEmptySpacing,
+        )
     }
 }
