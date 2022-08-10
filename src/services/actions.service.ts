@@ -81,7 +81,7 @@ export class ActionsService extends ActionsServiceBase {
         if (!user) {
             return this.googleLoginService.getAuthentication(context)
         }
-        
+
         const token = await this.googleSheetsService.getCurrentOrRefreshedToken(context.user.id)
         if (!token) {
             return this.logout(request)
