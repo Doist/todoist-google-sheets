@@ -5,7 +5,7 @@ import { Test } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import MockDate from 'mockdate'
 
-import { buildTask } from '../../test/fixtures'
+import { buildTask, buildUser } from '../../test/fixtures'
 import { CardActions as SheetCardActions } from '../constants/card-actions'
 import { User } from '../entities/user.entity'
 import * as csvHelpers from '../utils/csv-helpers'
@@ -54,6 +54,7 @@ describe('ActionsService', () => {
     describe('export', () => {
         it("triggers a logout if the user's token has expired", async () => {
             setupGetToken(undefined)
+            setupGetUser(buildUser())
 
             const logout = jest
                 .spyOn(target, 'logout')
@@ -107,7 +108,7 @@ describe('ActionsService', () => {
         })
 
         it('does not send anything to google sheets if no tasks', async () => {
-            setupGetUser({ id: 42 } as User)
+            setupGetUser(buildUser())
             setupGetToken('kwijibo')
 
             jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
@@ -140,7 +141,7 @@ describe('ActionsService', () => {
         })
 
         it('does not make a call to get sections if sections not required', async () => {
-            setupGetUser({ id: 42 } as User)
+            setupGetUser(buildUser())
             setupGetToken('kwijibo')
             setupGetTasks()
 
@@ -174,7 +175,7 @@ describe('ActionsService', () => {
         })
 
         it('does not make a call to get sections if sections not required', async () => {
-            setupGetUser({ id: 42 } as User)
+            setupGetUser(buildUser())
             setupGetToken('kwijibo')
             setupGetTasks()
 
@@ -210,7 +211,7 @@ describe('ActionsService', () => {
         })
 
         it('passes the correct data through to google sheets service', async () => {
-            setupGetUser({ id: 42 } as User)
+            setupGetUser(buildUser())
             setupGetToken('kwijibo')
             setupGetTasks()
 
@@ -247,7 +248,7 @@ describe('ActionsService', () => {
         })
 
         it('returns a notification bridge with the resulting URL', async () => {
-            setupGetUser({ id: 42 } as User)
+            setupGetUser(buildUser())
             setupGetToken('kwijibo')
             setupGetTasks()
 

@@ -3,6 +3,9 @@ import { TodoistApi } from '@doist/todoist-api-typescript'
 import request from 'supertest'
 
 import { CardActions as SheetCardActions } from '../../src/constants/card-actions'
+import { GoogleSheetsService } from '../../src/services/google-sheets.service'
+import { UserDatabaseService } from '../../src/services/user-database.service'
+import { buildUser } from '../fixtures'
 
 import { createTestApp } from './helpers'
 
@@ -22,6 +25,12 @@ describe('export e2e tests', () => {
     })
 
     it('returns the no tasks card if no tasks for the specified project', () => {
+        jest.spyOn(UserDatabaseService.prototype, 'getUser').mockImplementation(() =>
+            Promise.resolve(buildUser()),
+        )
+        jest.spyOn(GoogleSheetsService.prototype, 'getCurrentOrRefreshedToken').mockImplementation(
+            () => Promise.resolve({ token: 'token', userId: '42' }),
+        )
         jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() => Promise.resolve([]))
 
         return request(app.getHttpServer())
