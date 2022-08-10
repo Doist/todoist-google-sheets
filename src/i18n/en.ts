@@ -1,5 +1,6 @@
 export enum Sheets {
     EXPORT_BUTTON = 'Export',
+    EXPORT_COMPLETED = 'Export completed',
     HELP_CENTER_LINK = 'https://get.todoist.help/hc/requests/new?subject=Export%20to%20Google%20Sheets',
     LEARN_MORE_LINK = 'https://todoist.com/help/TBD',
     LOGIN_INSTRUCTIONS = "Export your project's tasks straight to Google Sheets",
@@ -11,6 +12,7 @@ export enum Sheets {
     PROFILE_DETAILS_WITH_NAME = 'You’re connected to Google as **{0}** ({1}).',
     PROFILE_DETAILS_WITH_NO_NAME = 'You’re connected to Google as **{0}**.',
     SHEET_TITLE = 'Todoist Export: {0} from {1}', // {0} is the project name, {1} is the date
+    VIEW_SHEET = 'View sheet',
 }
 
 export enum Options {
