@@ -1,4 +1,5 @@
 import { buildOptions, buildSection, buildTask } from '../../test/fixtures'
+import { DELIMITER } from '../types'
 
 import { convertTasksToCsvString } from './csv-helpers'
 
@@ -13,7 +14,9 @@ describe('CSV Helpers', () => {
                 })
 
                 expect(result).toEqual(
-                    'taskId,content,sectionId,parentTaskId,completed,due,priority,description,parentTask,section,assignee,createdDate',
+                    toCustomCSV(
+                        'taskId,content,sectionId,parentTaskId,completed,due,priority,description,parentTask,section,assignee,createdDate',
+                    ),
                 )
             })
 
@@ -32,7 +35,7 @@ describe('CSV Helpers', () => {
                         createdDate: false,
                     },
                 })
-                expect(result).toEqual('taskId,content,sectionId,parentTaskId')
+                expect(result).toEqual(toCustomCSV('taskId,content,sectionId,parentTaskId'))
             })
 
             it('displays correct headers when some options are turned off', () => {
@@ -52,7 +55,7 @@ describe('CSV Helpers', () => {
                 })
 
                 expect(result).toEqual(
-                    'taskId,content,sectionId,parentTaskId,completed,due,description',
+                    toCustomCSV('taskId,content,sectionId,parentTaskId,completed,due,description'),
                 )
             })
         })
@@ -91,7 +94,9 @@ describe('CSV Helpers', () => {
                 const rows = result.split('\n')
 
                 expect(rows[1]).toEqual(
-                    '10000001,My awesome task,1234,,false,,4,This is a description,,My awesome section,,2022-08-05T00:00:00.000Z',
+                    toCustomCSV(
+                        '10000001,My awesome task,1234,,false,,4,This is a description,,My awesome section,,2022-08-05T00:00:00.000Z',
+                    ),
                 )
             })
 
@@ -127,9 +132,62 @@ describe('CSV Helpers', () => {
                 const rows = result.split('\n')
 
                 expect(rows[1]).toEqual(
-                    '10000001,My awesome task,1234,,false,,4,,,2022-08-05T00:00:00.000Z',
+                    toCustomCSV(
+                        '10000001,My awesome task,1234,,false,,4,,,2022-08-05T00:00:00.000Z',
+                    ),
+                )
+            })
+
+            it('sanitises the task content/description', () => {
+                const result = convertTasksToCsvString({
+                    tasks: [
+                        buildTask({
+                            overrides: {
+                                id: 10000001,
+                                content: 'My awesome task\nOn two lines',
+                                sectionId: 1234,
+                                due: {
+                                    string: '2022-08-09',
+                                    recurring: false,
+                                    date: new Date('2022-08-09').toISOString(),
+                                },
+                                priority: 4,
+                                description: 'This is a description\nAlso on two lines',
+                                created: new Date(2022, 7, 5).toISOString(),
+                                assignee: 12345,
+                            },
+                        }),
+                    ],
+                    sections: [
+                        buildSection({
+                            overrides: {
+                                id: 1234,
+                                name: 'My awesome section',
+                            },
+                        }),
+                    ],
+                    exportOptions: buildOptions(),
+                })
+
+                const rows = result.split('\n')
+
+                expect(rows[1]).toEqual(
+                    toCustomCSV(
+                        '10000001,My awesome task On two lines,1234,,false,,4,This is a description Also on two lines,,My awesome section,,2022-08-05T00:00:00.000Z',
+                    ),
                 )
             })
         })
     })
+
+    /**
+     * This helper function is purely to convert from standard CSV format. We are using a custom delimiter to make it easier to compare against the actual CSV output.
+     * because tasks or descriptions could contain commas and this was messing with the CSV upload.
+     *
+     * @param csv The csv data with "," as the delimiiter
+     * @returns regular CSV data with the custom delimiter
+     */
+    function toCustomCSV(csv: string) {
+        return csv.replaceAll(',', DELIMITER)
+    }
 })

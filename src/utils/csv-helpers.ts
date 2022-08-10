@@ -1,4 +1,9 @@
-import { ExportOptionsNames, ExportOptionsToUse, NonOptionalExportOptionsNames } from '../types'
+import {
+    DELIMITER,
+    ExportOptionsNames,
+    ExportOptionsToUse,
+    NonOptionalExportOptionsNames,
+} from '../types'
 
 import type { Section, Task } from '@doist/todoist-api-typescript'
 
@@ -23,7 +28,7 @@ function createHeaderRow(exportOptions: ExportOptionsToUse): string {
         }
     })
 
-    return items.join(',')
+    return items.join(DELIMITER)
 }
 
 function createTaskRow(
@@ -40,7 +45,7 @@ function createTaskRow(
                 items.push(task.id.toString())
                 break
             case 'content':
-                items.push(task.content)
+                items.push(sanitiseText(task.content))
                 break
             case 'sectionId':
                 items.push(task.sectionId.toString())
@@ -67,7 +72,7 @@ function createTaskRow(
                 items.push(task.priority ? task.priority.toString() : '')
                 break
             case 'description':
-                items.push(task.description ? task.description : '')
+                items.push(task.description ? sanitiseText(task.description) : '')
                 break
             case 'parentTask':
                 items.push(task.parentId ? getParentTaskName(task.parentId, tasks) : '')
@@ -83,15 +88,19 @@ function createTaskRow(
                 break
         }
     })
-    return items.join(',')
+    return items.join(DELIMITER)
 }
 
 function getParentTaskName(parentTaskId: number, tasks: Task[]): string {
     const task = tasks.find((x) => x.id === parentTaskId)
-    return task?.content ?? ''
+    return task?.content ? sanitiseText(task.content) : ''
 }
 
 function getSectionName(sectionId: number, sections: Section[]): string {
     const section = sections.find((x) => x.id === sectionId)
-    return section?.name ?? ''
+    return section?.name ? sanitiseText(section.name) : ''
+}
+
+function sanitiseText(description: string): string {
+    return description.replace(/\n/g, ' ')
 }
