@@ -4,6 +4,7 @@ import {
     AuthenticationClient,
     AuthModule,
     CoreModule,
+    ErrorModule,
     LoginService,
     TokenValidator,
     UserDatabaseService as UserDatabaseServiceBase,
@@ -68,6 +69,11 @@ import { DatabaseModule } from './database.module'
                 },
             ],
             exports: [GoogleSheetsService, GoogleLoginService],
+        }),
+        ErrorModule.forRoot({
+            errorCardOptions: {
+                helpCenterLink: Sheets.HELP_CENTER_LINK,
+            },
         }),
     ],
     providers: [

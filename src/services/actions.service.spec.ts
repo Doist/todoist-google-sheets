@@ -5,7 +5,8 @@ import { Test } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import MockDate from 'mockdate'
 
-import { buildTask, buildUser } from '../../test/fixtures'
+import { buildUser } from '../../test/fixtures'
+import { setupGetTasks, setupGetToken, setupGetUser } from '../../test/setups'
 import { CardActions as SheetCardActions } from '../constants/card-actions'
 import { User } from '../entities/user.entity'
 import * as csvHelpers from '../utils/csv-helpers'
@@ -131,6 +132,9 @@ describe('ActionsService', () => {
                         content: 'My Project',
                         contentPlain: 'My Project',
                     } as ContextMenuData,
+                    inputs: {
+                        'Input.completed': 'true',
+                    },
                 },
                 extensionType: 'context-menu',
                 maximumDoistCardVersion: 0.5,
@@ -293,21 +297,4 @@ describe('ActionsService', () => {
             })
         })
     })
-
-    function setupGetUser(user: User | undefined) {
-        const getUser = jest.spyOn(target['userDatabaseService'], 'getUser')
-        getUser.mockImplementation(() => Promise.resolve(user))
-    }
-
-    function setupGetToken(token: string | undefined) {
-        jest.spyOn(target['googleSheetsService'], 'getCurrentOrRefreshedToken').mockImplementation(
-            () => Promise.resolve(token ? { token, userId: '42' } : undefined),
-        )
-    }
-
-    function setupGetTasks() {
-        jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
-            Promise.resolve([buildTask()]),
-        )
-    }
 })
