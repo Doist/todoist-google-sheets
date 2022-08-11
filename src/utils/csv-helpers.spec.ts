@@ -177,6 +177,44 @@ describe('CSV Helpers', () => {
                     ),
                 )
             })
+
+            it('handles task content with commas correctly', () => {
+                const result = convertTasksToCsvString({
+                    tasks: [
+                        buildTask({
+                            overrides: {
+                                id: 10000001,
+                                content: 'My awesome task, but with a comma',
+                                sectionId: 1234,
+                                due: {
+                                    string: '2022-08-09',
+                                    recurring: false,
+                                    date: new Date('2022-08-09').toISOString(),
+                                },
+                                priority: 4,
+                                description: 'This is a description\nAlso on two lines',
+                                created: new Date(2022, 7, 5).toISOString(),
+                                assignee: 12345,
+                            },
+                        }),
+                    ],
+                    sections: [
+                        buildSection({
+                            overrides: {
+                                id: 1234,
+                                name: 'My awesome section',
+                            },
+                        }),
+                    ],
+                    exportOptions: buildOptions(),
+                })
+
+                const rows = result.split('\n')
+
+                expect(rows[1]).toEqual(
+                    '10000001...---...My awesome task, but with a comma...---...1234...---......---...false...---......---...4...---...This is a description Also on two lines...---......---...My awesome section...---......---...2022-08-05T00:00:00.000Z',
+                )
+            })
         })
     })
 
