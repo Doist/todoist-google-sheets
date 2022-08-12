@@ -80,9 +80,7 @@ describe('AppModule', () => {
             .then((response) => {
                 const body = response.body as DoistCardResponse
                 expect(body.card).toBeDefined()
-                expect(JSON.stringify(body)).toMatch(
-                    /This extension is only available for projects./,
-                )
+                expect(JSON.stringify(body)).toMatch(/Exporting is only available for projects./)
             })
     })
 
