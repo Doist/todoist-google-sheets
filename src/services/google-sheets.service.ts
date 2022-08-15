@@ -8,10 +8,11 @@ import {
 import { HttpService } from '@nestjs/axios'
 import { Injectable } from '@nestjs/common'
 import dayjs from 'dayjs'
-import { Auth, oauth2_v2 } from 'googleapis'
+import { Auth, oauth2_v2, sheets_v4 } from 'googleapis'
 import { lastValueFrom } from 'rxjs'
 
 import { getConfiguration } from '../config/configuration'
+import { DELIMITER } from '../types'
 
 import { UserDatabaseService } from './user-database.service'
 
@@ -22,8 +23,9 @@ const scopes = [
 ]
 
 type ExportData = {
-    data: string
+    csvData: string
     title: string
+    authToken: string
 }
 
 export type TokenInfo = {
@@ -68,6 +70,31 @@ export class GoogleSheetsService extends AuthenticationClient {
         }
     }
 
+    override async refreshToken(refreshToken: string): Promise<AccessTokenData | undefined> {
+        this.oauthClient.setCredentials({
+            refresh_token: refreshToken,
+        })
+        const headers = await this.oauthClient.getRequestHeaders()
+        if (!('Authorization' in headers)) {
+            return undefined
+        }
+        const authHeader = headers['Authorization']
+        if (!authHeader?.startsWith('Bearer ')) {
+            return undefined
+        }
+
+        const bearerToken = authHeader.split(' ')[1]
+        if (!bearerToken) {
+            return undefined
+        }
+
+        return {
+            accessToken: bearerToken,
+            expiresAt: undefined,
+            refreshToken: undefined,
+        }
+    }
+
     async hasValidToken(token: string): Promise<boolean> {
         const url = new URL(TOKEN_INFO)
         url.searchParams.append('access_token', token)
@@ -100,8 +127,41 @@ export class GoogleSheetsService extends AuthenticationClient {
         }
     }
 
-    exportToSheets(_options: ExportData): Promise<void> {
-        return Promise.resolve()
+    async exportToSheets({ authToken, csvData, title }: ExportData): Promise<string | undefined> {
+        const client = new sheets_v4.Sheets({ auth: authToken })
+
+        const { data } = await client.spreadsheets.create({
+            key: this.apiKey,
+            oauth_token: authToken,
+            requestBody: {
+                properties: {
+                    title: title,
+                },
+            },
+        })
+
+        const { spreadsheetId, spreadsheetUrl } = data
+
+        await client.spreadsheets.batchUpdate({
+            key: this.apiKey,
+            oauth_token: authToken,
+            spreadsheetId: spreadsheetId as string,
+            requestBody: {
+                requests: [
+                    {
+                        pasteData: {
+                            coordinate: {
+                                rowIndex: 0,
+                                columnIndex: 0,
+                            },
+                            data: csvData,
+                            delimiter: DELIMITER,
+                        },
+                    },
+                ],
+            },
+        })
+        return spreadsheetUrl ?? undefined
     }
 
     private _oauthClient?: Auth.OAuth2Client
