@@ -13,8 +13,6 @@ import type { User } from '../../src/entities/user.entity'
 describe('Settings e2e tests', () => {
     let app: INestApplication
 
-    afterEach(() => jest.restoreAllMocks())
-
     afterAll(() => app.close())
 
     beforeAll(async () => {

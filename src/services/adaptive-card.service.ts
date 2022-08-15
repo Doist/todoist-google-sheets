@@ -48,7 +48,6 @@ type OptionsKeys = {
 
 const optionsTranslationKeys: OptionsKeys = {
     assignee: Options.ASSIGNEE,
-    author: Options.AUTHOR,
     completed: Options.COMPLETED,
     createdDate: Options.CREATED_DATE,
     description: Options.DESCRIPTION,
@@ -56,7 +55,6 @@ const optionsTranslationKeys: OptionsKeys = {
     priority: Options.PRIORITY,
     parentTask: Options.PARENT_TASK,
     section: Options.SECTION,
-    timezone: Options.TIMEZONE,
 }
 
 @Injectable()
@@ -94,43 +92,6 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         )
 
         return card
-    }
-
-    private createExportOptions(): CardElement {
-        const container = Container.from({
-            spacing: 'medium',
-        })
-        const optionsHeader = TextBlock.from({
-            id: OPTIONS_HEADER_ID,
-            text: this.translationService.getTranslation(Sheets.OPTIONS_HEADER),
-            isSubtle: true,
-        })
-
-        const columns = new ColumnSet()
-
-        const leftColumn = new Column('stretch')
-        const rightColumn = new Column('stretch')
-
-        const toggleSwitches = ExportOptionsNames.map((option) =>
-            ToggleInput.from({
-                id: `Input.${option}`,
-                title: this.translationService.getTranslation(optionsTranslationKeys[option]),
-                defaultValue: 'true',
-            }),
-        )
-
-        const [leftColumnItems, rightColumnItems] = chunk(toggleSwitches, 5)
-
-        leftColumnItems?.forEach((item) => leftColumn.addItem(item))
-        rightColumnItems?.forEach((item) => rightColumn.addItem(item))
-
-        columns.addColumn(leftColumn)
-        columns.addColumn(rightColumn)
-
-        container.addItem(columns)
-        container.addItem(optionsHeader)
-
-        return container
     }
 
     settingsCard({ user }: { user: User }): DoistCard {
@@ -187,6 +148,23 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         return card
     }
 
+    noTasksCard({ projectName }: { projectName: string }): DoistCard {
+        const card = this.createEmptyCard()
+
+        card.addItem(
+            TextBlock.from({
+                text: formatString(
+                    this.translationService.getTranslation(Sheets.NO_TASKS),
+                    projectName,
+                ),
+                horizontalAlignment: 'center',
+                spacing: 'extraLarge',
+            }),
+        )
+
+        return card
+    }
+
     private createMainHeader({
         leftColumnContent,
         middleColumnContent,
@@ -208,5 +186,45 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
             [autoColumnSet(rightColumn)],
             includeEmptySpacing,
         )
+    }
+
+    private createExportOptions(): CardElement {
+        const container = Container.from({
+            spacing: 'medium',
+        })
+        const optionsHeader = TextBlock.from({
+            id: OPTIONS_HEADER_ID,
+            text: this.translationService.getTranslation(Sheets.OPTIONS_HEADER),
+            isSubtle: true,
+        })
+
+        const columns = new ColumnSet()
+
+        const leftColumn = new Column('stretch')
+        const rightColumn = new Column('stretch')
+
+        const toggleSwitches = ExportOptionsNames.map((option) =>
+            ToggleInput.from({
+                id: `Input.${option}`,
+                title: this.translationService.getTranslation(optionsTranslationKeys[option]),
+                defaultValue: 'true',
+            }),
+        )
+
+        const [leftColumnItems, rightColumnItems] = chunk(
+            toggleSwitches,
+            (toggleSwitches.length / 2) | 0,
+        )
+
+        leftColumnItems?.forEach((item) => leftColumn.addItem(item))
+        rightColumnItems?.forEach((item) => rightColumn.addItem(item))
+
+        columns.addColumn(leftColumn)
+        columns.addColumn(rightColumn)
+
+        container.addItem(columns)
+        container.addItem(optionsHeader)
+
+        return container
     }
 }

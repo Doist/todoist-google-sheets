@@ -7,8 +7,6 @@ import type { INestApplication } from '@nestjs/common'
 describe('Auth e2e tests', () => {
     let app: INestApplication
 
-    afterEach(() => jest.restoreAllMocks())
-
     afterAll(() => app.close())
 
     beforeAll(async () => {

@@ -69,6 +69,7 @@
         "eslint-plugin-prettier": "4.2.1",
         "husky": "8.0.1",
         "jest": "27.5.1",
+        "mockdate": "3.0.5",
         "npm-run-all": "4.1.5",
         "prettier": "2.7.1",
         "rimraf": "3.0.2",
@@ -87,6 +88,7 @@
     "prettier": "@doist/prettier-config",
     "dependencies": {
         "@doist/integrations-common": "1.0.17",
+        "@doist/todoist-api-typescript": "1.5.0",
         "@doist/ui-extensions-core": "3.2.1",
         "@doist/ui-extensions-server": "1.0.5",
         "@nestjs/axios": "0.1.0",

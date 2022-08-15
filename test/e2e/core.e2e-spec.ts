@@ -10,8 +10,6 @@ import type { INestApplication } from '@nestjs/common'
 describe('Core e2e tests', () => {
     let app: INestApplication
 
-    afterEach(() => jest.restoreAllMocks())
-
     afterAll(() => app.close())
 
     beforeAll(async () => {
