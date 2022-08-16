@@ -7,9 +7,11 @@ import { DataSource } from 'typeorm'
 
 import { mockConnection } from '../../test/mocks'
 import { User } from '../entities/user.entity'
+import { UserDatabaseService } from '../services/user-database.service'
 
 import { AppModule } from './app.module'
 
+import type { DoistCardResponse } from '@doist/ui-extensions-core'
 import type { NestExpressApplication } from '@nestjs/platform-express'
 
 async function createTestApp(): Promise<{
@@ -60,4 +62,49 @@ describe('AppModule', () => {
             .get('/error')
             .expect(200)
             .expect('Content-Type', /text\/html/))
+
+    it('returns the project only card when coming from a task', () => {
+        return request(app.getHttpServer())
+            .post('/process')
+            .send({
+                context: { user: { id: 42 }, theme: 'light' },
+                action: {
+                    actionType: 'initial',
+                    params: {
+                        source: 'task',
+                    },
+                },
+            })
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+                const body = response.body as DoistCardResponse
+                expect(body.card).toBeDefined()
+                expect(JSON.stringify(body)).toMatch(/Exporting is only available for projects./)
+            })
+    })
+
+    it('returns the login card when coming from a project (assuming first run)', () => {
+        jest.spyOn(UserDatabaseService.prototype, 'getUser').mockImplementation(() =>
+            Promise.resolve(undefined),
+        )
+        return request(app.getHttpServer())
+            .post('/process')
+            .send({
+                context: { user: { id: 42 }, theme: 'light' },
+                action: {
+                    actionType: 'initial',
+                    params: {
+                        source: 'project',
+                    },
+                },
+            })
+            .expect(200)
+            .expect('Content-Type', /json/)
+            .then((response) => {
+                const body = response.body as DoistCardResponse
+                expect(body.card).toBeDefined()
+                expect(JSON.stringify(body)).toMatch(/Log in with Google/)
+            })
+    })
 })
