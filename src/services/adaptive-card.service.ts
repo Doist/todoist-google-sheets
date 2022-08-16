@@ -222,8 +222,15 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         columns.addColumn(leftColumn)
         columns.addColumn(rightColumn)
 
-        container.addItem(columns)
         container.addItem(optionsHeader)
+        container.addItem(columns)
+        container.addItem(
+            TextBlock.from({
+                isSubtle: true,
+                text: this.translationService.getTranslation(Sheets.ALWAYS_EXPORTED),
+                wrap: true,
+            }),
+        )
 
         return container
     }

@@ -1,4 +1,5 @@
 export enum Sheets {
+    ALWAYS_EXPORTED = 'The following fields are always exported: Task Id, Content, Section Id, and Parent Task Id.',
     EXPORT_BUTTON = 'Export',
     EXPORT_COMPLETED = 'Export completed',
     HELP_CENTER_LINK = 'https://get.todoist.help/hc/requests/new?subject=Export%20to%20Google%20Sheets',
@@ -8,7 +9,7 @@ export enum Sheets {
     LOGIN_TITLE = 'Log in with Google',
     MAIN_TITLE = 'Export **{0}**', // {0} is the project name
     NO_TASKS = '**{0}** has no tasks to export', // {0} is the project name
-    OPTIONS_HEADER = 'Choose which fields you want to export',
+    OPTIONS_HEADER = 'Choose which fields you want to export.',
     PROFILE_DETAILS_WITH_NAME = 'You’re connected to Google as **{0}** ({1}).',
     PROFILE_DETAILS_WITH_NO_NAME = 'You’re connected to Google as **{0}**.',
     PROJECT_ONLY = 'Exporting is only available for projects. ',
