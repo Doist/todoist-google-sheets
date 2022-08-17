@@ -37,7 +37,7 @@ describe('Settings e2e tests', () => {
                     actionType: 'submit',
                     actionId: CardActions.Settings,
                     params: {
-                        source: 'task',
+                        source: 'project',
                     },
                 },
             })
@@ -68,7 +68,7 @@ describe('Settings e2e tests', () => {
                 action: {
                     actionType: 'initial',
                     params: {
-                        source: 'task',
+                        source: 'project',
                     },
                 },
             })
