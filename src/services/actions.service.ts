@@ -1,10 +1,20 @@
+import { formatString } from '@doist/integrations-common'
+import { TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
     CardActions,
+    DoistCardBridgeFactory,
     Submit,
+    TranslationService,
 } from '@doist/ui-extensions-server'
 
 import { Injectable } from '@nestjs/common'
+
+import { getConfiguration } from '../config/configuration'
+import { CardActions as SheetsCardActions } from '../constants/card-actions'
+import { Sheets } from '../i18n/en'
+import { convertTasksToCsvString } from '../utils/csv-helpers'
+import { getExportOptions } from '../utils/input-helpers'
 
 import { AdaptiveCardService } from './adaptive-card.service'
 import { GoogleLoginService } from './google-login.service'
@@ -24,6 +34,7 @@ export class ActionsService extends ActionsServiceBase {
         private readonly googleLoginService: GoogleLoginService,
         private readonly adaptiveCardsService: AdaptiveCardService,
         private readonly userDatabaseService: UserDatabaseService,
+        private readonly translationService: TranslationService,
     ) {
         super()
     }
@@ -47,7 +58,7 @@ export class ActionsService extends ActionsServiceBase {
     }
 
     @Submit({ actionId: CardActions.LogOut })
-    async logOut(request: DoistCardRequest): Promise<DoistCardResponse> {
+    async logout(request: DoistCardRequest): Promise<DoistCardResponse> {
         const { context } = request
         // From: https://afterlogic.com/mailbee-net/docs/OAuth2GoogleRegularAccountsInstalledApps.html#ClearingRevoking
         // > Also, revoking won't work for expired tokens. If it's expired and you want to test revoking, refresh it first.
@@ -72,8 +83,78 @@ export class ActionsService extends ActionsServiceBase {
         return { card }
     }
 
-    private getHomeCard(_request: DoistCardRequest): Promise<DoistCardResponse> {
-        const card = this.adaptiveCardsService.homeCard()
+    @Submit({ actionId: SheetsCardActions.Export })
+    async export(request: DoistCardRequest): Promise<DoistCardResponse> {
+        const { context, action } = request
+
+        const user = await this.userDatabaseService.getUser(context.user.id)
+        if (!user) {
+            return this.googleLoginService.getAuthentication(context)
+        }
+
+        const token = await this.googleSheetsService.getCurrentOrRefreshedToken(context.user.id)
+        if (!token) {
+            return this.logout(request)
+        }
+
+        const contextData = action.params as ContextMenuData
+        const todoistClient = new TodoistApi(getConfiguration().todoistAuthToken)
+
+        const exportOptions = getExportOptions(action.inputs)
+
+        const tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
+
+        if (tasks.length === 0) {
+            return {
+                card: this.adaptiveCardsService.noTasksCard({
+                    projectName: contextData.content,
+                }),
+            }
+        }
+
+        // Only fetch sections if we're using them, otherwise it's a wasted call
+        const sections = exportOptions['section']
+            ? await todoistClient.getSections(contextData.sourceId)
+            : []
+
+        const csvData = convertTasksToCsvString({
+            tasks,
+            sections,
+            exportOptions,
+        })
+
+        const sheetUrl = await this.googleSheetsService.exportToSheets({
+            title: this.createSheetName(contextData.content),
+            csvData: csvData,
+            authToken: token.token,
+        })
+
+        return {
+            bridges: [
+                DoistCardBridgeFactory.createNotificationBridge({
+                    text: this.translationService.getTranslation(Sheets.EXPORT_COMPLETED),
+                    type: 'success',
+                    actionText: this.translationService.getTranslation(Sheets.VIEW_SHEET),
+                    actionUrl: sheetUrl,
+                }),
+                DoistCardBridgeFactory.finished,
+            ],
+        }
+    }
+
+    private createSheetName(projectName: string): string {
+        return formatString(
+            this.translationService.getTranslation(Sheets.SHEET_TITLE),
+            projectName,
+            new Date().toLocaleDateString(),
+        )
+    }
+
+    private getHomeCard(request: DoistCardRequest): Promise<DoistCardResponse> {
+        const contextData = request.action.params as ContextMenuData
+        const card = this.adaptiveCardsService.homeCard({
+            projectName: contextData.content,
+        })
         return Promise.resolve({ card })
     }
 }

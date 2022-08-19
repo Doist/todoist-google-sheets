@@ -3,6 +3,9 @@ import { build, perBuild, sequence } from '@jackfranklin/test-data-bot'
 
 import { User } from '../src/entities/user.entity'
 
+import type { Section, Task } from '@doist/todoist-api-typescript'
+import type { ExportOptionsToUse } from '../src/types'
+
 export const buildUser = build<User>('User', {
     fields: {
         id: sequence((num) => num + 10000000),
@@ -14,5 +17,44 @@ export const buildUser = build<User>('User', {
         emailAddress: perBuild(() => faker.internet.email()),
         set: User.prototype.set,
         update: User.prototype.update,
+    },
+})
+
+export const buildOptions = build<ExportOptionsToUse>('ExportOptionsToUse', {
+    fields: {
+        assignee: true,
+        due: true,
+        completed: true,
+        priority: true,
+        description: true,
+        parentTask: true,
+        section: true,
+        createdDate: true,
+    },
+})
+
+export const buildTask = build<Task>('Task', {
+    fields: {
+        id: sequence((num) => num + 10000000),
+        commentCount: 0,
+        content: perBuild(() => faker.lorem.sentence()),
+        completed: false,
+        created: perBuild(() => faker.date.recent().toDateString()),
+        description: '',
+        labelIds: [],
+        order: 0,
+        priority: 0,
+        projectId: 12345,
+        sectionId: 12345,
+        url: '',
+    },
+})
+
+export const buildSection = build<Section>('Section', {
+    fields: {
+        id: sequence((num) => num + 10000000),
+        name: perBuild(() => faker.lorem.sentence()),
+        order: 0,
+        projectId: 12345,
     },
 })
