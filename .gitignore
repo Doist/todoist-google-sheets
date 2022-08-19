@@ -86,9 +86,6 @@ docker-compose.all.yml
 .yalc
 yalc.*
 
-# shared images that get copied at build time
-**/images/shared
-
 # Do not commit ormconfig.json, this is only used for creating migration files and 
 # could disrupt live production settings.
 ormconfig.json

@@ -1,42 +1,14 @@
-import { ExtensionVerificationGuard, registerViews } from '@doist/ui-extensions-server'
-
-import { Test } from '@nestjs/testing'
-import { getRepositoryToken } from '@nestjs/typeorm'
 import request from 'supertest'
-import { DataSource } from 'typeorm'
 
-import { mockConnection } from '../../test/mocks'
-import { User } from '../entities/user.entity'
-import { UserDatabaseService } from '../services/user-database.service'
+import { UserDatabaseService } from '../../src/services/user-database.service'
 
-import { AppModule } from './app.module'
+import { createTestApp } from './helpers'
 
 import type { DoistCardResponse } from '@doist/ui-extensions-core'
-import type { NestExpressApplication } from '@nestjs/platform-express'
+import type { INestApplication } from '@nestjs/common'
 
-async function createTestApp(): Promise<{
-    appModule: NestExpressApplication
-}> {
-    const moduleRef = await Test.createTestingModule({
-        imports: [AppModule],
-    })
-        .overrideProvider(DataSource)
-        .useValue(mockConnection())
-        .overrideProvider(getRepositoryToken(User))
-        .useValue(jest.fn())
-        .overrideGuard(ExtensionVerificationGuard)
-        .useValue({ canActivate: () => true })
-        .compile()
-
-    const app = moduleRef.createNestApplication<NestExpressApplication>()
-
-    await registerViews(app)
-
-    return { appModule: await app.init() }
-}
-
-describe('AppModule', () => {
-    let app: NestExpressApplication
+describe('Core e2e tests', () => {
+    let app: INestApplication
 
     afterEach(() => jest.restoreAllMocks())
 
