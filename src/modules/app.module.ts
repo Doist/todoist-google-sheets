@@ -37,6 +37,7 @@ import { DatabaseModule } from './database.module'
                 imageSrc: '/images/google-error.png',
                 helpCenterLink: Sheets.HELP_CENTER_LINK,
             },
+            appName: 'Todoist',
             providers: [
                 LoginService,
                 GoogleSheetsService,

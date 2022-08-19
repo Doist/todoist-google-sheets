@@ -51,11 +51,16 @@ describe('AppModule', () => {
 
     it('runs the server without crashing', () => expect(app.getHttpServer()).toBeDefined())
 
-    it(`/GET /success`, () =>
-        request(app.getHttpServer())
+    it(`/GET /success`, () => {
+        return request(app.getHttpServer())
             .get('/success')
             .expect(200)
-            .expect('Content-Type', /text\/html/))
+            .expect('Content-Type', /text\/html/)
+            .then((response) => {
+                const body = response.text
+                expect(body).toMatch(/Go back to Todoist and click Continue./)
+            })
+    })
 
     it(`/GET /error`, () =>
         request(app.getHttpServer())
