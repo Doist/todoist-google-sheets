@@ -49,7 +49,7 @@
         "@doist/eslint-config": "7.1.2",
         "@doist/prettier-config": "3.0.5",
         "@doist/tsconfig": "1.0.0",
-        "@faker-js/faker": "7.3.0",
+        "@faker-js/faker": "7.4.0",
         "@jackfranklin/test-data-bot": "2.0.0",
         "@nestjs/cli": "9.0.0",
         "@nestjs/schematics": "9.0.1",
