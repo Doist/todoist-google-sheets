@@ -1,14 +1,17 @@
 import { formatString } from '@doist/integrations-common'
-import { TodoistApi } from '@doist/todoist-api-typescript'
+import { Section, Task, TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
     CardActions,
     DoistCardBridgeFactory,
+    IntegrationException,
+    isForbiddenError,
+    isUnauthorizedError,
     Submit,
     TranslationService,
 } from '@doist/ui-extensions-server'
 
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 
 import { getConfiguration } from '../config/configuration'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
@@ -97,48 +100,81 @@ export class ActionsService extends ActionsServiceBase {
             return this.logout(request)
         }
 
+        if (!action.inputs) {
+            throw new IntegrationException({
+                error: new BadRequestException(),
+            })
+        }
+
         const contextData = action.params as ContextMenuData
         const todoistClient = new TodoistApi(getConfiguration().todoistAuthToken)
 
         const exportOptions = getExportOptions(action.inputs)
 
-        const tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
+        let tasks: Task[] = []
+        let sections: Section[] = []
 
-        if (tasks.length === 0) {
-            return {
-                card: this.adaptiveCardsService.noTasksCard({
-                    projectName: contextData.content,
-                }),
+        try {
+            tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
+
+            if (tasks.length === 0) {
+                return {
+                    card: this.adaptiveCardsService.noTasksCard({
+                        projectName: contextData.content,
+                    }),
+                }
             }
+
+            // Only fetch sections if we're using them, otherwise it's a wasted call
+            sections = exportOptions['section']
+                ? await todoistClient.getSections(contextData.sourceId)
+                : []
+        } catch (error: unknown) {
+            throw new IntegrationException({
+                error,
+                overrides: {
+                    retryAction: action,
+                },
+            })
         }
 
-        // Only fetch sections if we're using them, otherwise it's a wasted call
-        const sections = exportOptions['section']
-            ? await todoistClient.getSections(contextData.sourceId)
-            : []
+        try {
+            const csvData = convertTasksToCsvString({
+                tasks,
+                sections,
+                exportOptions,
+            })
 
-        const csvData = convertTasksToCsvString({
-            tasks,
-            sections,
-            exportOptions,
-        })
+            const sheetUrl = await this.googleSheetsService.exportToSheets({
+                title: this.createSheetName(contextData.content),
+                csvData: csvData,
+                authToken: token.token,
+            })
 
-        const sheetUrl = await this.googleSheetsService.exportToSheets({
-            title: this.createSheetName(contextData.content),
-            csvData: csvData,
-            authToken: token.token,
-        })
+            return {
+                bridges: [
+                    DoistCardBridgeFactory.createNotificationBridge({
+                        text: this.translationService.getTranslation(Sheets.EXPORT_COMPLETED),
+                        type: 'success',
+                        actionText: this.translationService.getTranslation(Sheets.VIEW_SHEET),
+                        actionUrl: sheetUrl,
+                    }),
+                    DoistCardBridgeFactory.finished,
+                ],
+            }
+        } catch (error: unknown) {
+            if (isUnauthorizedError(error) || isForbiddenError(error)) {
+                // If we have become unauthorized, we need to treat this like a sign out
+                // so tokens need to be removed.
+                return this.logout(request)
+            }
 
-        return {
-            bridges: [
-                DoistCardBridgeFactory.createNotificationBridge({
-                    text: this.translationService.getTranslation(Sheets.EXPORT_COMPLETED),
-                    type: 'success',
-                    actionText: this.translationService.getTranslation(Sheets.VIEW_SHEET),
-                    actionUrl: sheetUrl,
-                }),
-                DoistCardBridgeFactory.finished,
-            ],
+            throw new IntegrationException({
+                error,
+                overrides: {
+                    retryAction: action,
+                },
+            })
         }
     }
 
