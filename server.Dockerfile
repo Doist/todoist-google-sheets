@@ -6,7 +6,7 @@ WORKDIR /usr/src/app
 ARG GH_PACKAGES_TOKEN
 
 COPY . .
-COPY ./.prod.env ./.env
+COPY ./prod.env ./.env
 
 # Build from source
 RUN echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}" > ~/.npmrc && \
@@ -15,12 +15,13 @@ RUN echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}" > ~/.npmrc && \
     rm -rf node_modules
 
 # Install dependencies for production
-RUN npm ci --omit=dev 
+RUN npm ci --omit=dev
 
 FROM node:18-alpine AS RUNTIME
 
 # `curl` is used in AWS CloudFormation HealthCheck
-RUN apk add --no-cache curl 
+# hadolint ignore=DL3018
+RUN apk add --no-cache curl
 
 WORKDIR /usr/src/app
 

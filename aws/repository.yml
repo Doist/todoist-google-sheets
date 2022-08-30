@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy Todoist Google Spreadsheet Integration service.
+Parameters:
+    ServiceName:
+        Type: String
+        Default: todoist-google-sheets
+        Description: A name for the service
+
+Resources:
+    Repository:
+        Type: AWS::ECR::Repository
+        Properties:
+            RepositoryName: !Sub '${ServiceName}'
+            LifecyclePolicy:
+                LifecyclePolicyText: |
+                    {
+                      "rules": [{
+                          "rulePriority": 1,
+                          "selection": {
+                            "tagStatus": "any",
+                            "countType": "imageCountMoreThan",
+                            "countNumber": 20
+                          },
+                          "action": {
+                            "type": "expire"
+                          }
+                        }
+                      ]
+                    }

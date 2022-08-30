@@ -1,0 +1,356 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Deploy Todoist Google Spreadsheet Integration service.
+Parameters:
+    ServiceName:
+        Type: String
+        Default: todoist-google-sheets
+        Description: A name for the service
+    Port:
+        Type: Number
+        Default: 3000
+        Description: What port number the application inside the docker container is binding to
+    ContainerTag:
+        Type: String
+        Default: 'latest'
+        Description: 'Container tag, usually a git commit hash SHA-1'
+    Cluster:
+        Type: String
+        Default: 'integrations'
+        Description: 'Container tag, usually a git commit hash SHA-1'
+    Environment:
+        Type: String
+        Default: production
+        AllowedValues:
+            - production
+        Description: 'Deployment environment (staging or production)'
+
+Metadata:
+  cfn-lint:
+    config:
+      regions:
+        - us-east-1
+      ignore_checks:
+        - I3042 # warning about hard-coded partition
+
+# You must specify a supported value for the ContainerCPU and ContainerMemory. These values are:
+#  CPU value       |  Memory value (MiB)Liste
+#   256 (.25 vCPU) | 512 (0.5GB), 1024 (1GB), 2048 (2GB)
+#   512 (.5 vCPU)  | 1024 (1GB), 2048 (2GB), 3072 (3GB), 4096 (4GB)
+#   1024 (1 vCPU)  | 2048 (2GB), 3072 (3GB), 4096 (4GB), 5120 (5GB), 6144 (6GB), 7168 (7GB), 8192 (8GB)
+#   2048 (2 vCPU)  | Between 4096 (4GB) and 16384 (16GB) in increments of 1024 (1GB)
+#   4096 (4 vCPU)  | Between 8192 (8GB) and 30720 (30GB) in increments of 1024 (1GB)
+
+# Conditions:
+#  Production: !Equals [!Ref Environment, production]
+#  NotProduction: !Not [!Equals [!Ref Environment, production]]
+
+Mappings:
+    Environments:
+        production:
+            Domain: 'td-sheets.todoist.net'
+            Cpu: '0.25 vCpu'
+            Memory: '0.5 gb'
+            VpcId: vpc-0e29ccc54e1df31d0 # integrations
+            Subnets:
+                - subnet-00709d6fa622a47d4
+                - subnet-0c2e129343dab451c
+            Retention: 14
+            ListenerArn: 'arn:aws:elasticloadbalancing:us-east-1:011833101604:listener/app/integrations/a4a83736d872f436/84358f5a7c6444e1'
+
+Resources:
+    # Service logs
+    CloudWatchLogsGroup:
+        Type: AWS::Logs::LogGroup
+        DeletionPolicy: Delete
+        UpdateReplacePolicy: Delete
+        Properties:
+            LogGroupName: !Sub '/ecs/${ServiceName}'
+            RetentionInDays: !FindInMap [Environments, !Ref 'Environment', Retention]
+
+    DNSRecord:
+        Type: AWS::Route53::RecordSet
+        Properties:
+            Name: !FindInMap [Environments, !Ref 'Environment', Domain]
+            HostedZoneId: Z2UM8P3D4FB0Z1
+            Type: A
+            AliasTarget:
+                DNSName: integrations-2121385268.us-east-1.elb.amazonaws.com
+                HostedZoneId: Z35SXDOTRQ7X7K
+
+    SecurityGroup:
+        Type: AWS::EC2::SecurityGroup
+        Properties:
+            GroupName: !Sub '${ServiceName}-${Environment}'
+            GroupDescription: !Sub '${Environment} ${ServiceName}'
+            VpcId: !FindInMap [Environments, !Ref 'Environment', VpcId]
+            SecurityGroupIngress:
+                - IpProtocol: tcp
+                  FromPort: !Ref Port
+                  ToPort: !Ref Port
+                  SourceSecurityGroupId: sg-0995a3a8f2fc57d5a # integrations load balancer
+
+    # The task definition. This is a simple metadata description of what
+    # container to run, and what resource requirements it has.
+    TaskDefinition:
+        Type: AWS::ECS::TaskDefinition
+        Properties:
+            Family: !Sub '${ServiceName}'
+            Memory: !FindInMap [Environments, !Ref 'Environment', Memory]
+            Cpu: !FindInMap [Environments, !Ref 'Environment', Cpu]
+            # A role needed by ECS.
+            # "The ARN of the task execution role that containers in this task can assume. All containers in this task are granted the permissions that are specified in this role."
+            # "There is an optional task execution IAM role that you can specify with Fargate to allow your Fargate tasks to make API calls to Amazon ECR."
+            ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+            # "The Amazon Resource Name (ARN) of an AWS Identity and Access Management (IAM) role that grants containers in the task permission to call AWS APIs on your behalf."
+            TaskRoleArn: !Ref 'AWS::NoValue'
+            NetworkMode: awsvpc
+            RequiresCompatibilities: [FARGATE]
+            ContainerDefinitions:
+                - Name: !Sub '${ServiceName}'
+                  Image: !Sub '${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ServiceName}:${ContainerTag}'
+                  HealthCheck:
+                      Command:
+                          - CMD-SHELL
+                          - !Sub 'curl -f http://localhost:${Port}/ping || exit 1'
+                  DockerLabels:
+                      ContainerTag: !Ref 'ContainerTag'
+                  Environment:
+                      - Name: NODE_ENV
+                        Value: !Ref 'Environment'
+                  Secrets:
+                      - Name: 'DB_NAME'
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:db::'
+                      - Name: 'DB_HOST'
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:host::'
+                      - Name: 'DB_PORT'
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:port::'
+                      - Name: 'DB_PASSWORD'
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:password::'
+                      - Name: 'DB_USERNAME'
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:username::'
+                      - Name: VERIFICATION_TOKENS
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:VERIFICATION_TOKENS::'
+                      - Name: GOOGLE_TRACKING_ID
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_TRACKING_ID::'
+                      - Name: SENTRY_DSN
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:SENTRY_DSN::'
+                      - Name: GOOGLE_API_KEY
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_API_KEY::'
+                      - Name: GOOGLE_CLIENT_ID
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_CLIENT_ID::'
+                      - Name: GOOGLE_CLIENT_SECRET
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_CLIENT_SECRET::'
+                  Ulimits:
+                      - Name: nofile
+                        HardLimit: 5000
+                        SoftLimit: 5000
+                      - Name: core
+                        HardLimit: 0
+                        SoftLimit: 0
+                  PortMappings:
+                      - ContainerPort: !Ref 'Port'
+                  LogConfiguration:
+                      LogDriver: awslogs
+                      Options:
+                          awslogs-group: !Ref CloudWatchLogsGroup
+                          awslogs-region: !Ref AWS::Region
+                          awslogs-stream-prefix: ecs
+
+    ExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub '${ServiceName}-${Environment}-execution'
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: ecs-tasks.amazonaws.com
+                      Action: 'sts:AssumeRole'
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+            Policies:
+                - PolicyName: !Sub '${ServiceName}-${Environment}-execution'
+                  PolicyDocument:
+                      Version: 2012-10-17
+                      Statement:
+                          - Effect: Allow
+                            Action:
+                                - 'secretsmanager:GetSecretValue'
+                            Resource:
+                                - !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:integrations/${ServiceName}/*'
+                          - Effect: Allow
+                            Action:
+                                - 'secretsmanager:ListSecrets'
+                            Resource:
+                                - '*'
+
+    # IAM role for GitHub actions
+    PolicyAS:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - application-autoscaling:DescribeScalableTargets
+                - application-autoscaling:RegisterScalableTarget
+                - application-autoscaling:DeregisterScalableTarget
+                - application-autoscaling:DescribeScalingPolicies
+                - application-autoscaling:PutScalingPolicy
+                - application-autoscaling:DeleteScalingPolicy
+                - application-autoscaling:DescribeScheduledActions
+              Resource: "*"
+
+    PolicyCFN:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - "cloudformation:*"
+              Resource:
+                - !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*"
+            - Effect: Deny
+              Action:
+                - "cloudformation:DeleteStack"
+              Resource:
+                - !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*"
+
+    PolicyECS:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - ecs:UpdateService
+                - ecs:CreateService
+                - ecs:DeleteService
+                - ecs:UntagResource
+                - ecs:TagResource
+              Resource:
+                - !Sub "arn:aws:ecs:*:${AWS::AccountId}:service/${Cluster}/${ServiceName}-*"
+            - Effect: Allow
+              Action:
+                - ecr:GetDownloadUrlForLayer
+                - ecr:BatchGetImage
+                - ecr:CompleteLayerUpload
+                - ecr:UploadLayerPart
+                - ecr:InitiateLayerUpload
+                - ecr:BatchCheckLayerAvailability
+                - ecr:PutImage
+              Resource:
+                - !Sub "arn:aws:ecr:*:${AWS::AccountId}:repository/${ServiceName}"
+            - Effect: Allow
+              Action:
+                - ecs:RegisterTaskDefinition
+                - ecs:DeregisterTaskDefinition
+                - ecs:DescribeServices
+                - ecr:GetAuthorizationToken
+                - ecs:DescribeTaskDefinition
+              Resource: "*"
+
+    PolicyIAM:
+      Type: AWS::IAM::ManagedPolicy
+      Properties:
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+            - Effect: Allow
+              Action:
+                - iam:PassRole
+                - iam:GetRole
+                - iam:ListPolicyVersions
+                - iam:GetPolicy
+              Resource:
+                - !Sub "arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-*"
+                - !Sub "arn:aws:iam::${AWS::AccountId}:policy/${ServiceName}-*"
+                - arn:aws:iam::011833101604:role/ecsEventsRole
+
+    GitHubRoleCI:
+      Type: AWS::IAM::Role
+      Properties:
+        Description: !Sub "${ServiceName} deployment role"
+        AssumeRolePolicyDocument:
+          Statement:
+            - Effect: Allow
+              Action: sts:AssumeRoleWithWebIdentity
+              Principal:
+                Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
+              Condition:
+                StringLike:
+                  token.actions.githubusercontent.com:sub: !Sub "repo:Doist/${ServiceName}:*"
+        ManagedPolicyArns:
+          - !Ref PolicyECS
+          - !Ref PolicyCFN
+          - !Ref PolicyIAM
+          - !Ref PolicyAS
+
+    # The service. The service is a resource which allows you to run multiple
+    # copies of a type of task, and gather up their logs and metrics, as well
+    # as monitor the number of running tasks and replace any that have crashed
+    Service:
+        Type: AWS::ECS::Service
+        Properties:
+            ServiceName: !Sub '${ServiceName}'
+            Cluster: !Ref Cluster
+            DesiredCount: 1
+            DeploymentConfiguration:
+                MaximumPercent: 200
+                MinimumHealthyPercent: 100
+                DeploymentCircuitBreaker:
+                    Enable: true
+                    Rollback: true
+            LaunchType: FARGATE
+            PlatformVersion: 1.4.0
+            NetworkConfiguration:
+                AwsvpcConfiguration:
+                    AssignPublicIp: ENABLED
+                    SecurityGroups:
+                        - !Ref SecurityGroup
+                    Subnets: !FindInMap [Environments, !Ref 'Environment', Subnets]
+            TaskDefinition: !Ref 'TaskDefinition'
+            LoadBalancers:
+                - ContainerName: !Ref ServiceName
+                  ContainerPort: !Ref 'Port'
+                  TargetGroupArn: !Ref 'TargetGroup'
+
+    # A target group. This is used for keeping track of all the tasks, and
+    # what IP addresses / port numbers they have. You can query it yourself,
+    # to use the addresses yourself, but most often this target group is just
+    # connected to an application load balancer, or network load balancer, so
+    # it can automatically distribute traffic across all the targets.
+    TargetGroup:
+        Type: AWS::ElasticLoadBalancingV2::TargetGroup
+        Properties:
+            TargetType: ip
+            Name: !Sub '${ServiceName}-ip'
+            Port: !Ref 'Port'
+            Protocol: HTTP
+            Matcher:
+                HttpCode: '200'
+            HealthCheckPath: /ping
+            VpcId: !FindInMap [Environments, !Ref 'Environment', VpcId]
+            TargetGroupAttributes:
+                - Key: deregistration_delay.timeout_seconds
+                  Value: '5'
+
+
+    # Create a rule on the load balancer for routing traffic to the target group
+    # NOTE: You can specify up to three comparison strings per condition and up to five per rule.
+    LoadBalancerRule:
+        Type: AWS::ElasticLoadBalancingV2::ListenerRule
+        Properties:
+            Priority: 20 # must be unique
+            Actions:
+                - TargetGroupArn: !Ref 'TargetGroup'
+                  Type: 'forward'
+            Conditions:
+                - Field: host-header
+                  Values:
+                      - !FindInMap [Environments, !Ref 'Environment', Domain]
+            ListenerArn: !FindInMap [Environments, !Ref 'Environment', ListenerArn]
