@@ -21,7 +21,6 @@ lib-cov
 coverage
 *.lcov
 
-
 # Dependency directories
 node_modules/
 
@@ -46,14 +45,10 @@ node_modules/
 # parcel-bundler cache (https://parceljs.org/)
 .cache
 
-
-
-
 config.json
 
 # Ensures local .env files aren't committed
 *.local
-
 
 # dependencies
 /node_modules
@@ -71,7 +66,6 @@ config.json
 **/lib
 **/styles
 
-
 .idea/
 build/
 tmp/
@@ -86,6 +80,9 @@ docker-compose.all.yml
 .yalc
 yalc.*
 
-# Do not commit ormconfig.json, this is only used for creating migration files and 
+# Do not commit ormconfig.json, this is only used for creating migration files and
 # could disrupt live production settings.
 ormconfig.json
+
+.direnv/
+.envrc
