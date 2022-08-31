@@ -1,0 +1,99 @@
+name: Deployment
+
+# Only a single deployment workflow will run at a time.
+concurrency:
+    group: todoist-google-sheets
+
+on:
+    push:
+        branches:
+            - 'main'
+
+permissions:
+    id-token: write
+    contents: read
+
+env:
+    INTEGRATION: todoist-google-sheets
+    ENV: production
+    AWS_REGION: us-east-1
+    AWS_ROLE: 'arn:aws:iam::011833101604:role/todoist-google-sheets-production-GitHubRoleCI-HWJ5P5W2PLOB'
+
+jobs:
+    build:
+        name: Build Docker Image
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v3
+
+            - run: |
+                  echo ::set-output name=short::$(git rev-parse --short ${{ github.sha }})
+              id: git
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v1
+
+            - name: Configure AWS credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  role-duration-seconds: 900
+                  role-to-assume: ${{ env.AWS_ROLE }}
+                  aws-region: ${{ env.AWS_REGION }}
+
+            - name: Login to AWS Container Registry
+              uses: docker/login-action@v1
+              with:
+                  registry: ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
+
+            - name: Build and Push Docker
+              uses: docker/build-push-action@v2
+              with:
+                  context: .
+                  file: server.Dockerfile
+                  push: true
+                  build-args: |
+                      GH_PACKAGES_TOKEN=${{ secrets.GH_PACKAGES_TOKEN }}
+                  cache-from: type=gha,scope=${{ github.repository }}
+                  cache-to: type=gha,scope=${{ github.repository }},mode=max
+                  tags: |
+                      ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.REPO }}:latest
+                      ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.REPO }}:${{ env.VERSION }}
+              env:
+                  VERSION: ${{ steps.git.outputs.short }}
+                  REPO: ${{ env.INTEGRATION }}
+
+    deploy:
+        name: Deployment
+        runs-on: ubuntu-latest
+        needs: [build]
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v3
+            - run: |
+                  echo ::set-output name=short::$(git rev-parse --short ${{ github.sha }})
+              id: git
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v1
+              with:
+                  role-duration-seconds: 900
+                  role-to-assume: ${{ env.AWS_ROLE }}
+                  aws-region: ${{ env.AWS_REGION }}
+            - name: Deploy CloudFormation Stack
+              uses: aws-actions/aws-cloudformation-github-deploy@v1
+              with:
+                  name: ${{ env.INTEGRATION }}-${{ env.ENV }}
+                  template: aws/cloudformation.yml
+                  capabilities: CAPABILITY_NAMED_IAM
+                  no-fail-on-empty-changeset: 1
+                  timeout-in-minutes: 10
+                  parameter-overrides: >-
+                      Environment=${{ env.ENV }},
+                      ContainerTag=${{ env.IMAGE_TAG_GIT }}
+                  tags: |
+                      [
+                        { "Key": "Project", "Value": "integrations" },
+                        { "Key": "Environment", "Value": "${{ env.ENV }}" }
+                      ]
+              env:
+                  IMAGE_TAG_GIT: ${{ steps.git.outputs.short }}
