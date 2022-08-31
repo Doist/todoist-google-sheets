@@ -1,6 +1,7 @@
 import {
     ActionsService,
     AppController as AppControllerBase,
+    AppTokenService,
     GoogleAnalyticsService,
     ThemeService,
 } from '@doist/ui-extensions-server'
@@ -13,7 +14,8 @@ export class AppController extends AppControllerBase {
         themeService: ThemeService,
         analyticsService: GoogleAnalyticsService,
         protected override readonly actionsService: ActionsService,
+        appTokenService: AppTokenService,
     ) {
-        super(analyticsService, themeService, actionsService)
+        super(analyticsService, themeService, actionsService, appTokenService)
     }
 }

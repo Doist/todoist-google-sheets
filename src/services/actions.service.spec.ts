@@ -6,7 +6,12 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import MockDate from 'mockdate'
 
 import { buildUser } from '../../test/fixtures'
-import { setupGetTasks, setupGetToken, setupGetUser } from '../../test/setups'
+import {
+    setupGetAppToken,
+    setupGetGoogleToken,
+    setupGetTasks,
+    setupGetUser,
+} from '../../test/setups'
 import { CardActions as SheetCardActions } from '../constants/card-actions'
 import { User } from '../entities/user.entity'
 import * as csvHelpers from '../utils/csv-helpers'
@@ -54,7 +59,7 @@ describe('ActionsService', () => {
 
     describe('export', () => {
         it("triggers a logout if the user's token has expired", async () => {
-            setupGetToken(undefined)
+            setupGetGoogleToken(undefined)
             setupGetUser(buildUser())
 
             const logout = jest
@@ -82,7 +87,7 @@ describe('ActionsService', () => {
         })
 
         it("returns the login screen if the user's token has expired", async () => {
-            setupGetToken('kwijibo')
+            setupGetGoogleToken('kwijibo')
             setupGetUser(undefined)
             const getAuthentication = jest
                 .spyOn(target['googleLoginService'], 'getAuthentication')
@@ -110,7 +115,8 @@ describe('ActionsService', () => {
 
         it('does not send anything to google sheets if no tasks', async () => {
             setupGetUser(buildUser())
-            setupGetToken('kwijibo')
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
 
             jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
                 Promise.resolve([]),
@@ -146,7 +152,8 @@ describe('ActionsService', () => {
 
         it('does not make a call to get sections if sections not required', async () => {
             setupGetUser(buildUser())
-            setupGetToken('kwijibo')
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
             setupGetTasks()
 
             jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
@@ -180,7 +187,8 @@ describe('ActionsService', () => {
 
         it('does not make a call to get sections if sections not required', async () => {
             setupGetUser(buildUser())
-            setupGetToken('kwijibo')
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
             setupGetTasks()
 
             jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
@@ -216,7 +224,8 @@ describe('ActionsService', () => {
 
         it('passes the correct data through to google sheets service', async () => {
             setupGetUser(buildUser())
-            setupGetToken('kwijibo')
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
             setupGetTasks()
 
             const exportToSheets = jest
@@ -253,7 +262,8 @@ describe('ActionsService', () => {
 
         it('returns a notification bridge with the resulting URL', async () => {
             setupGetUser(buildUser())
-            setupGetToken('kwijibo')
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
             setupGetTasks()
 
             jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>

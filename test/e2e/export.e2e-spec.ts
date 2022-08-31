@@ -1,11 +1,12 @@
 import { TodoistApi } from '@doist/todoist-api-typescript'
+import { TODOIST_APP_TOKEN_HEADER } from '@doist/ui-extensions-server'
 
 import request from 'supertest'
 
 import { CardActions as SheetCardActions } from '../../src/constants/card-actions'
 import { GoogleSheetsService } from '../../src/services/google-sheets.service'
 import { buildUser } from '../fixtures'
-import { setupGetToken, setupGetUser } from '../setups'
+import { setupGetGoogleToken, setupGetUser } from '../setups'
 
 import { createTestApp } from './helpers'
 
@@ -24,12 +25,13 @@ describe('export e2e tests', () => {
 
     it('returns the no tasks card if no tasks for the specified project', () => {
         setupGetUser(buildUser())
-        setupGetToken('token')
+        setupGetGoogleToken('token')
 
         jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() => Promise.resolve([]))
 
         return request(app.getHttpServer())
             .post('/process')
+            .set(TODOIST_APP_TOKEN_HEADER, 'kwijibo')
             .send({
                 context: { user: { id: 42 }, theme: 'light' },
                 action: {
@@ -58,10 +60,11 @@ describe('export e2e tests', () => {
 
     it('returns the error card if inputs are not present (should not happen, but you never know)', () => {
         setupGetUser(buildUser())
-        setupGetToken('token')
+        setupGetGoogleToken('token')
 
         return request(app.getHttpServer())
             .post('/process')
+            .set(TODOIST_APP_TOKEN_HEADER, 'kwijibo')
             .send({
                 context: { user: { id: 42 }, theme: 'light' },
                 action: {
@@ -90,7 +93,7 @@ describe('export e2e tests', () => {
 
     it('returns the error card if talking to Todoist fails', () => {
         setupGetUser(buildUser())
-        setupGetToken('token')
+        setupGetGoogleToken('token')
 
         jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() => {
             throw new Error('Error talking to Todoist')
@@ -98,6 +101,8 @@ describe('export e2e tests', () => {
 
         return request(app.getHttpServer())
             .post('/process')
+            .set(TODOIST_APP_TOKEN_HEADER, 'kwijibo')
+
             .send({
                 context: { user: { id: 42 }, theme: 'light' },
                 action: {
@@ -129,7 +134,7 @@ describe('export e2e tests', () => {
 
     it('returns the error card if talking to Google fails', () => {
         setupGetUser(buildUser())
-        setupGetToken('token')
+        setupGetGoogleToken('token')
 
         jest.spyOn(GoogleSheetsService.prototype, 'exportToSheets').mockImplementation(() => {
             throw new Error('Generic error talking to Google')
@@ -137,6 +142,7 @@ describe('export e2e tests', () => {
 
         return request(app.getHttpServer())
             .post('/process')
+            .set(TODOIST_APP_TOKEN_HEADER, 'kwijibo')
             .send({
                 context: { user: { id: 42 }, theme: 'light' },
                 action: {

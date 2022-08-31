@@ -1,4 +1,5 @@
 import { TodoistApi } from '@doist/todoist-api-typescript'
+import { AppTokenService } from '@doist/ui-extensions-server'
 
 import { GoogleSheetsService } from '../src/services/google-sheets.service'
 import { UserDatabaseService } from '../src/services/user-database.service'
@@ -12,10 +13,14 @@ export function setupGetUser(user: User | undefined) {
     getUser.mockImplementation(() => Promise.resolve(user))
 }
 
-export function setupGetToken(token: string | undefined) {
+export function setupGetGoogleToken(token: string | undefined) {
     jest.spyOn(GoogleSheetsService.prototype, 'getCurrentOrRefreshedToken').mockImplementation(() =>
         Promise.resolve(token ? { token, userId: '42' } : undefined),
     )
+}
+
+export function setupGetAppToken(token: string | undefined) {
+    jest.spyOn(AppTokenService.prototype, 'getAppToken').mockImplementation(() => token)
 }
 
 export function setupGetTasks() {
