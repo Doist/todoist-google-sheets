@@ -233,7 +233,7 @@ Resources:
                 - ecs:UntagResource
                 - ecs:TagResource
               Resource:
-                - !Sub "arn:aws:ecs:*:${AWS::AccountId}:service/${Cluster}/${ServiceName}-*"
+                - !Sub "arn:aws:ecs:*:${AWS::AccountId}:service/${Cluster}/${ServiceName}*"
             - Effect: Allow
               Action:
                 - ecr:GetDownloadUrlForLayer
@@ -266,6 +266,8 @@ Resources:
                 - iam:GetRole
                 - iam:ListPolicyVersions
                 - iam:GetPolicy
+                - iam:CreatePolicyVersion
+                - iam:DeletePolicyVersion
               Resource:
                 - !Sub "arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-*"
                 - !Sub "arn:aws:iam::${AWS::AccountId}:policy/${ServiceName}-*"
