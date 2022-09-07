@@ -107,7 +107,7 @@ export class ActionsService extends ActionsServiceBase {
             })
         }
 
-        const appToken = this.appTokenService.getAppToken()
+        const appToken = this.appTokenService.appToken
         if (!appToken) {
             throw new IntegrationException({
                 error: new BadRequestException('Missing authentication token'),

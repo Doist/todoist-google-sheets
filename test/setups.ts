@@ -20,7 +20,7 @@ export function setupGetGoogleToken(token: string | undefined) {
 }
 
 export function setupGetAppToken(token: string | undefined) {
-    jest.spyOn(AppTokenService.prototype, 'getAppToken').mockImplementation(() => token)
+    jest.spyOn(AppTokenService.prototype, 'appToken', 'get').mockImplementation(() => token)
 }
 
 export function setupGetTasks() {
