@@ -35,7 +35,7 @@ export const buildOptions = build<ExportOptionsToUse>('ExportOptionsToUse', {
 
 export const buildTask = build<Task>('Task', {
     fields: {
-        id: String(sequence((num) => num + 10000000)),
+        id: sequence((num) => String(num + 10000000)),
         commentCount: 0,
         content: perBuild(() => faker.lorem.sentence()),
         isCompleted: false,
@@ -53,7 +53,7 @@ export const buildTask = build<Task>('Task', {
 
 export const buildSection = build<Section>('Section', {
     fields: {
-        id: String(sequence((num) => num + 10000000)),
+        id: sequence((num) => String(num + 10000000)),
         name: perBuild(() => faker.lorem.sentence()),
         order: 0,
         projectId: '12345',
