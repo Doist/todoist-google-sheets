@@ -50,15 +50,13 @@ export class ActionsService extends ActionsServiceBase {
     }
 
     async getInitialView(request: DoistCardRequest): Promise<DoistCardResponse> {
-        if (!this.isFromProject(request)) {
-            return { card: this.adaptiveCardsService.projectOnlyCard() }
-        }
-
         if (!(await this.googleSheetsService.isAuthenticated(request.context.user.id))) {
             return this.googleLoginService.getAuthentication(request.context, true)
         }
 
-        return this.getHomeCard(request)
+        return request.extensionType === 'settings'
+            ? this.getSettingsCard(request)
+            : this.getHomeCard(request)
     }
 
     @Submit({ actionId: CardActions.LogOut })
@@ -195,6 +193,9 @@ export class ActionsService extends ActionsServiceBase {
     }
 
     private getHomeCard(request: DoistCardRequest): Promise<DoistCardResponse> {
+        if (!this.isFromProject(request)) {
+            return Promise.resolve({ card: this.adaptiveCardsService.projectOnlyCard() })
+        }
         const contextData = request.action.params as ContextMenuData
         const card = this.adaptiveCardsService.homeCard({
             projectName: contextData.content,
