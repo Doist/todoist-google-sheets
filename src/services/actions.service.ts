@@ -121,7 +121,7 @@ export class ActionsService extends ActionsServiceBase {
         let sections: Section[] = []
 
         try {
-            tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
+            tasks = await todoistClient.getTasks({ projectId: String(contextData.sourceId) })
 
             if (tasks.length === 0) {
                 return {

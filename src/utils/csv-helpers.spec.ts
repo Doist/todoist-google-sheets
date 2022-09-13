@@ -67,23 +67,23 @@ describe('CSV Helpers', () => {
                         buildTask({
                             overrides: {
                                 content: 'My awesome task',
-                                sectionId: 1234,
+                                sectionId: '1234',
                                 due: {
                                     string: '2022-08-09',
-                                    recurring: false,
+                                    isRecurring: false,
                                     date: new Date('2022-08-09').toISOString(),
                                 },
                                 priority: 4,
                                 description: 'This is a description',
-                                created: new Date(2022, 7, 5).toISOString(),
-                                assignee: 12345,
+                                createdAt: new Date(2022, 7, 5).toISOString(),
+                                assigneeId: '12345',
                             },
                         }),
                     ],
                     sections: [
                         buildSection({
                             overrides: {
-                                id: 1234,
+                                id: '1234',
                                 name: 'My awesome section',
                             },
                         }),
@@ -105,18 +105,18 @@ describe('CSV Helpers', () => {
                     tasks: [
                         buildTask({
                             overrides: {
-                                id: 10000001,
+                                id: '10000001',
                                 content: 'My awesome task',
-                                sectionId: 1234,
+                                sectionId: '1234',
                                 due: {
                                     string: '2022-08-09',
-                                    recurring: false,
+                                    isRecurring: false,
                                     date: new Date('2022-08-09').toISOString(),
                                 },
                                 priority: 4,
                                 description: 'This is a description',
-                                created: new Date(2022, 7, 5).toISOString(),
-                                assignee: 12345,
+                                createdAt: new Date(2022, 7, 5).toISOString(),
+                                assigneeId: '12345',
                             },
                         }),
                     ],
@@ -143,25 +143,25 @@ describe('CSV Helpers', () => {
                     tasks: [
                         buildTask({
                             overrides: {
-                                id: 10000001,
+                                id: '10000001',
                                 content: 'My awesome task\nOn two lines',
-                                sectionId: 1234,
+                                sectionId: '1234',
                                 due: {
                                     string: '2022-08-09',
-                                    recurring: false,
+                                    isRecurring: false,
                                     date: new Date('2022-08-09').toISOString(),
                                 },
                                 priority: 4,
                                 description: 'This is a description\nAlso on two lines',
-                                created: new Date(2022, 7, 5).toISOString(),
-                                assignee: 12345,
+                                createdAt: new Date(2022, 7, 5).toISOString(),
+                                assigneeId: '12345',
                             },
                         }),
                     ],
                     sections: [
                         buildSection({
                             overrides: {
-                                id: 1234,
+                                id: '1234',
                                 name: 'My awesome section',
                             },
                         }),
@@ -183,25 +183,25 @@ describe('CSV Helpers', () => {
                     tasks: [
                         buildTask({
                             overrides: {
-                                id: 10000001,
+                                id: '10000001',
                                 content: 'My awesome task, but with a comma',
-                                sectionId: 1234,
+                                sectionId: '1234',
                                 due: {
                                     string: '2022-08-09',
-                                    recurring: false,
+                                    isRecurring: false,
                                     date: new Date('2022-08-09').toISOString(),
                                 },
                                 priority: 4,
                                 description: 'This is a description\nAlso on two lines',
-                                created: new Date(2022, 7, 5).toISOString(),
-                                assignee: 12345,
+                                createdAt: new Date(2022, 7, 5).toISOString(),
+                                assigneeId: '12345',
                             },
                         }),
                     ],
                     sections: [
                         buildSection({
                             overrides: {
-                                id: 1234,
+                                id: '1234',
                                 name: 'My awesome section',
                             },
                         }),
