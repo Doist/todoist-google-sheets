@@ -2,6 +2,7 @@ import { formatString } from '@doist/integrations-common'
 import { Section, Task, TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
+    AppTokenService,
     CardActions,
     DoistCardBridgeFactory,
     IntegrationException,
@@ -13,7 +14,6 @@ import {
 
 import { BadRequestException, Injectable } from '@nestjs/common'
 
-import { getConfiguration } from '../config/configuration'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
 import { Sheets } from '../i18n/en'
 import { convertTasksToCsvString } from '../utils/csv-helpers'
@@ -38,6 +38,7 @@ export class ActionsService extends ActionsServiceBase {
         private readonly adaptiveCardsService: AdaptiveCardService,
         private readonly userDatabaseService: UserDatabaseService,
         private readonly translationService: TranslationService,
+        private readonly appTokenService: AppTokenService,
     ) {
         super()
     }
@@ -106,8 +107,15 @@ export class ActionsService extends ActionsServiceBase {
             })
         }
 
+        const appToken = this.appTokenService.appToken
+        if (!appToken) {
+            throw new IntegrationException({
+                error: new BadRequestException('Missing authentication token'),
+            })
+        }
+
         const contextData = action.params as ContextMenuData
-        const todoistClient = new TodoistApi(getConfiguration().todoistAuthToken)
+        const todoistClient = new TodoistApi(appToken)
 
         const exportOptions = getExportOptions(action.inputs)
 

@@ -1,6 +1,7 @@
 import {
     ActionsService as ActionsServiceBase,
     AdaptiveCardService as AdaptiveCardServiceBase,
+    AppController,
     AuthenticationClient,
     AuthModule,
     CoreModule,
@@ -12,7 +13,6 @@ import {
 
 import { Module } from '@nestjs/common'
 
-import { AppController } from '../controllers/app.controller'
 import { Sheets } from '../i18n/en'
 import { ActionsService } from '../services/actions.service'
 import { AdaptiveCardService } from '../services/adaptive-card.service'

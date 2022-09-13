@@ -25,12 +25,12 @@ Parameters:
         Description: 'Deployment environment (staging or production)'
 
 Metadata:
-  cfn-lint:
-    config:
-      regions:
-        - us-east-1
-      ignore_checks:
-        - I3042 # warning about hard-coded partition
+    cfn-lint:
+        config:
+            regions:
+                - us-east-1
+            ignore_checks:
+                - I3042 # warning about hard-coded partition
 
 # You must specify a supported value for the ContainerCPU and ContainerMemory. These values are:
 #  CPU value       |  Memory value (MiB)Liste
@@ -186,111 +186,111 @@ Resources:
 
     # IAM role for GitHub actions
     PolicyAS:
-      Type: AWS::IAM::ManagedPolicy
-      Properties:
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - application-autoscaling:DescribeScalableTargets
-                - application-autoscaling:RegisterScalableTarget
-                - application-autoscaling:DeregisterScalableTarget
-                - application-autoscaling:DescribeScalingPolicies
-                - application-autoscaling:PutScalingPolicy
-                - application-autoscaling:DeleteScalingPolicy
-                - application-autoscaling:DescribeScheduledActions
-              Resource: "*"
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - application-autoscaling:DescribeScalableTargets
+                          - application-autoscaling:RegisterScalableTarget
+                          - application-autoscaling:DeregisterScalableTarget
+                          - application-autoscaling:DescribeScalingPolicies
+                          - application-autoscaling:PutScalingPolicy
+                          - application-autoscaling:DeleteScalingPolicy
+                          - application-autoscaling:DescribeScheduledActions
+                      Resource: '*'
 
     PolicyCFN:
-      Type: AWS::IAM::ManagedPolicy
-      Properties:
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - "cloudformation:*"
-              Resource:
-                - !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*"
-            - Effect: Deny
-              Action:
-                - "cloudformation:DeleteStack"
-              Resource:
-                - !Sub "arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*"
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - 'cloudformation:*'
+                      Resource:
+                          - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
+                    - Effect: Deny
+                      Action:
+                          - 'cloudformation:DeleteStack'
+                      Resource:
+                          - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
 
     PolicyECS:
-      Type: AWS::IAM::ManagedPolicy
-      Properties:
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - ecs:UpdateService
-                - ecs:CreateService
-                - ecs:DeleteService
-                - ecs:UntagResource
-                - ecs:TagResource
-              Resource:
-                - !Sub "arn:aws:ecs:*:${AWS::AccountId}:service/${Cluster}/${ServiceName}*"
-            - Effect: Allow
-              Action:
-                - ecr:GetDownloadUrlForLayer
-                - ecr:BatchGetImage
-                - ecr:CompleteLayerUpload
-                - ecr:UploadLayerPart
-                - ecr:InitiateLayerUpload
-                - ecr:BatchCheckLayerAvailability
-                - ecr:PutImage
-              Resource:
-                - !Sub "arn:aws:ecr:*:${AWS::AccountId}:repository/${ServiceName}"
-            - Effect: Allow
-              Action:
-                - ecs:RegisterTaskDefinition
-                - ecs:DeregisterTaskDefinition
-                - ecs:DescribeServices
-                - ecr:GetAuthorizationToken
-                - ecs:DescribeTaskDefinition
-              Resource: "*"
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - ecs:UpdateService
+                          - ecs:CreateService
+                          - ecs:DeleteService
+                          - ecs:UntagResource
+                          - ecs:TagResource
+                      Resource:
+                          - !Sub 'arn:aws:ecs:*:${AWS::AccountId}:service/${Cluster}/${ServiceName}*'
+                    - Effect: Allow
+                      Action:
+                          - ecr:GetDownloadUrlForLayer
+                          - ecr:BatchGetImage
+                          - ecr:CompleteLayerUpload
+                          - ecr:UploadLayerPart
+                          - ecr:InitiateLayerUpload
+                          - ecr:BatchCheckLayerAvailability
+                          - ecr:PutImage
+                      Resource:
+                          - !Sub 'arn:aws:ecr:*:${AWS::AccountId}:repository/${ServiceName}'
+                    - Effect: Allow
+                      Action:
+                          - ecs:RegisterTaskDefinition
+                          - ecs:DeregisterTaskDefinition
+                          - ecs:DescribeServices
+                          - ecr:GetAuthorizationToken
+                          - ecs:DescribeTaskDefinition
+                      Resource: '*'
 
     PolicyIAM:
-      Type: AWS::IAM::ManagedPolicy
-      Properties:
-        PolicyDocument:
-          Version: 2012-10-17
-          Statement:
-            - Effect: Allow
-              Action:
-                - iam:PassRole
-                - iam:GetRole
-                - iam:ListPolicyVersions
-                - iam:GetPolicy
-                - iam:CreatePolicyVersion
-                - iam:DeletePolicyVersion
-              Resource:
-                - !Sub "arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-*"
-                - !Sub "arn:aws:iam::${AWS::AccountId}:policy/${ServiceName}-*"
-                - arn:aws:iam::011833101604:role/ecsEventsRole
+        Type: AWS::IAM::ManagedPolicy
+        Properties:
+            PolicyDocument:
+                Version: 2012-10-17
+                Statement:
+                    - Effect: Allow
+                      Action:
+                          - iam:PassRole
+                          - iam:GetRole
+                          - iam:ListPolicyVersions
+                          - iam:GetPolicy
+                          - iam:CreatePolicyVersion
+                          - iam:DeletePolicyVersion
+                      Resource:
+                          - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-*'
+                          - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${ServiceName}-*'
+                          - arn:aws:iam::011833101604:role/ecsEventsRole
 
     GitHubRoleCI:
-      Type: AWS::IAM::Role
-      Properties:
-        Description: !Sub "${ServiceName} deployment role"
-        AssumeRolePolicyDocument:
-          Statement:
-            - Effect: Allow
-              Action: sts:AssumeRoleWithWebIdentity
-              Principal:
-                Federated: !Sub "arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com"
-              Condition:
-                StringLike:
-                  token.actions.githubusercontent.com:sub: !Sub "repo:Doist/${ServiceName}:*"
-        ManagedPolicyArns:
-          - !Ref PolicyECS
-          - !Ref PolicyCFN
-          - !Ref PolicyIAM
-          - !Ref PolicyAS
+        Type: AWS::IAM::Role
+        Properties:
+            Description: !Sub '${ServiceName} deployment role'
+            AssumeRolePolicyDocument:
+                Statement:
+                    - Effect: Allow
+                      Action: sts:AssumeRoleWithWebIdentity
+                      Principal:
+                          Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
+                      Condition:
+                          StringLike:
+                              token.actions.githubusercontent.com:sub: !Sub 'repo:Doist/${ServiceName}:*'
+            ManagedPolicyArns:
+                - !Ref PolicyECS
+                - !Ref PolicyCFN
+                - !Ref PolicyIAM
+                - !Ref PolicyAS
 
     # The service. The service is a resource which allows you to run multiple
     # copies of a type of task, and gather up their logs and metrics, as well
@@ -340,7 +340,6 @@ Resources:
             TargetGroupAttributes:
                 - Key: deregistration_delay.timeout_seconds
                   Value: '5'
-
 
     # Create a rule on the load balancer for routing traffic to the target group
     # NOTE: You can specify up to three comparison strings per condition and up to five per rule.
