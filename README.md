@@ -68,14 +68,18 @@ Note _Client ID_ and _Client Secret_ add them to `.env` as `GOOGLE_CLIENT_ID` an
 
 You will need to use something like [ngrok](https://ngrok.com/), or [localtunnel](http://localtunnel.github.io/www/), in order for Todoist to be able to access your backend. Whichever service you use, the resulting URL is what should be used in the `BASE_URL` setting. It will also be what you add to your UI Extension in your integration at the [App Console](https://todoist.com/app_console). For this extension it will be `<Your Base URL>/process`.
 
-### Displaying the UI Extension
-
-To display the UI extension:
+### Creating the Integration
 
 -   Go to https://todoist.com/app_console
 -   Create a new integration
 -   Scroll down to the UI Extensions section of that integration and add a new one. This should be of type Context menu. The URL should be a locally running [ngrok](https://ngrok.com/) or [localtunnel](https://www.npmjs.com/package/localtunnel) instance
--   Copy the verification token in the integration and put it in your `.env` file in the `VERIFICATION_TOKENS` field.
+-   Select the `data:read` scope and save.
+
+### Displaying the UI Extension
+
+To display the UI extension:
+
+-   Copy the verification token from the integration created previously and put it in your `.env` file in the `VERIFICATION_TOKENS` field.
 -   Start the extension service (`npm run start:dev`) and start ngrok/localtunnel.
 -   Go to https://todoist.com
 -   Click a context menu of a project, then extensions, then whatever you called your UI extension
