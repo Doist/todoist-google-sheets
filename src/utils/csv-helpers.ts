@@ -48,10 +48,10 @@ function createTaskRow(
                 items.push(sanitiseText(task.content))
                 break
             case 'sectionId':
-                items.push(task.sectionId ? task.sectionId : '')
+                items.push(task.sectionId ?? '')
                 break
             case 'parentTaskId':
-                items.push(task.parentId ? task.parentId.toString() : '')
+                items.push(task.parentId ?? '')
                 break
         }
     })
@@ -66,10 +66,10 @@ function createTaskRow(
                 items.push(task.isCompleted ? 'true' : 'false')
                 break
             case 'due':
-                items.push(task.due ? task.due.string : '')
+                items.push(task.due?.string ?? '')
                 break
             case 'priority':
-                items.push(task.priority ? task.priority.toString() : '')
+                items.push(task.priority.toString())
                 break
             case 'description':
                 items.push(task.description ? sanitiseText(task.description) : '')
@@ -81,10 +81,10 @@ function createTaskRow(
                 items.push(task.sectionId ? getSectionName(task.sectionId, sections) : '')
                 break
             case 'assignee':
-                items.push(task.assigneeId ? task.assigneeId : '')
+                items.push(task.assigneeId ?? '')
                 break
             case 'createdDate':
-                items.push(task.createdAt ? task.createdAt : '')
+                items.push(task.createdAt)
                 break
         }
     })
