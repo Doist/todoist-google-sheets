@@ -48,10 +48,10 @@ function createTaskRow(
                 items.push(sanitiseText(task.content))
                 break
             case 'sectionId':
-                items.push(task.sectionId.toString())
+                items.push(task.sectionId ?? '')
                 break
             case 'parentTaskId':
-                items.push(task.parentId ? task.parentId.toString() : '')
+                items.push(task.parentId ?? '')
                 break
         }
     })
@@ -63,13 +63,13 @@ function createTaskRow(
 
         switch (option) {
             case 'completed':
-                items.push(task.completed ? 'true' : 'false')
+                items.push(task.isCompleted ? 'true' : 'false')
                 break
             case 'due':
-                items.push(task.due ? task.due.string : '')
+                items.push(task.due?.string ?? '')
                 break
             case 'priority':
-                items.push(task.priority ? task.priority.toString() : '')
+                items.push(task.priority.toString())
                 break
             case 'description':
                 items.push(task.description ? sanitiseText(task.description) : '')
@@ -81,22 +81,22 @@ function createTaskRow(
                 items.push(task.sectionId ? getSectionName(task.sectionId, sections) : '')
                 break
             case 'assignee':
-                items.push(task.assignee ? task.assignee.toString() : '')
+                items.push(task.assigneeId ?? '')
                 break
             case 'createdDate':
-                items.push(task.created ? task.created : '')
+                items.push(task.createdAt)
                 break
         }
     })
     return items.join(DELIMITER)
 }
 
-function getParentTaskName(parentTaskId: number, tasks: Task[]): string {
+function getParentTaskName(parentTaskId: string, tasks: Task[]): string {
     const task = tasks.find((x) => x.id === parentTaskId)
     return task?.content ? sanitiseText(task.content) : ''
 }
 
-function getSectionName(sectionId: number, sections: Section[]): string {
+function getSectionName(sectionId: string, sections: Section[]): string {
     const section = sections.find((x) => x.id === sectionId)
     return section?.name ? sanitiseText(section.name) : ''
 }

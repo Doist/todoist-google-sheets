@@ -35,26 +35,27 @@ export const buildOptions = build<ExportOptionsToUse>('ExportOptionsToUse', {
 
 export const buildTask = build<Task>('Task', {
     fields: {
-        id: sequence((num) => num + 10000000),
+        id: sequence((num) => String(num + 10000000)),
         commentCount: 0,
         content: perBuild(() => faker.lorem.sentence()),
-        completed: false,
-        created: perBuild(() => faker.date.recent().toDateString()),
+        isCompleted: false,
+        createdAt: perBuild(() => faker.date.recent().toDateString()),
         description: '',
-        labelIds: [],
+        labels: [],
         order: 0,
         priority: 0,
-        projectId: 12345,
-        sectionId: 12345,
+        projectId: '12345',
+        sectionId: '12345',
         url: '',
+        creatorId: '123',
     },
 })
 
 export const buildSection = build<Section>('Section', {
     fields: {
-        id: sequence((num) => num + 10000000),
+        id: sequence((num) => String(num + 10000000)),
         name: perBuild(() => faker.lorem.sentence()),
         order: 0,
-        projectId: 12345,
+        projectId: '12345',
     },
 })
