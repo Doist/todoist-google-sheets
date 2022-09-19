@@ -46,7 +46,7 @@
         "*.{ts,tsx,json,html,yml,yaml,md}": "prettier --check"
     },
     "devDependencies": {
-        "@doist/eslint-config": "7.1.2",
+        "@doist/eslint-config": "7.5.0",
         "@doist/prettier-config": "3.0.5",
         "@doist/tsconfig": "1.0.0",
         "@faker-js/faker": "7.5.0",
