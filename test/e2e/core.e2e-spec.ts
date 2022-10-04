@@ -22,23 +22,6 @@ describe('Core e2e tests', () => {
 
     it('runs the server without crashing', () => expect(app.getHttpServer()).toBeDefined())
 
-    it(`/GET /success`, () => {
-        return request(app.getHttpServer())
-            .get('/success')
-            .expect(200)
-            .expect('Content-Type', /text\/html/)
-            .then((response) => {
-                const body = response.text
-                expect(body).toMatch(/Go back to Todoist and click Continue./)
-            })
-    })
-
-    it(`/GET /error`, () =>
-        request(app.getHttpServer())
-            .get('/error')
-            .expect(200)
-            .expect('Content-Type', /text\/html/))
-
     it('returns the project only card when coming from a task and signed in', () => {
         setupGetUser({
             authToken: 'kwijibo',
