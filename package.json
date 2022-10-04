@@ -61,7 +61,7 @@
         "@types/supertest": "2.0.12",
         "@typescript-eslint/eslint-plugin": "5.38.1",
         "@typescript-eslint/parser": "5.38.1",
-        "dotenv": "16.0.2",
+        "dotenv": "16.0.3",
         "eslint": "8.24.0",
         "eslint-config-prettier": "8.5.0",
         "eslint-import-resolver-webpack": "0.13.2",
