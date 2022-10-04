@@ -14,13 +14,13 @@ describe('Auth e2e tests', () => {
         app = appModule
     })
 
-    it(`/GET /success`, () =>
+    it('/GET /success', () =>
         request(app.getHttpServer())
             .get('/success')
             .expect(200)
             .expect('Content-Type', /text\/html/))
 
-    it(`/GET /error`, () =>
+    it('/GET /error', () =>
         request(app.getHttpServer())
             .get('/error')
             .expect(200)
