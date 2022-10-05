@@ -117,6 +117,8 @@ Resources:
                   Environment:
                       - Name: NODE_ENV
                         Value: !Ref 'Environment'
+                      - Name: BASE_URL
+                        Value: !FindInMap [Environments, !Ref 'Environment', Domain]
                   Secrets:
                       - Name: 'DB_NAME'
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:db::'
