@@ -142,6 +142,8 @@ Resources:
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_CLIENT_ID::'
                       - Name: GOOGLE_CLIENT_SECRET
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_CLIENT_SECRET::'
+                      - Name: DB_ENCRYPTION_KEY
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:DB_ENCRYPTION_KEY::'
                   Ulimits:
                       - Name: nofile
                         HardLimit: 5000
