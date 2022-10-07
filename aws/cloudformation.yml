@@ -67,11 +67,22 @@ Resources:
             LogGroupName: !Sub '/ecs/${ServiceName}'
             RetentionInDays: !FindInMap [Environments, !Ref 'Environment', Retention]
 
+    # Public Zone
     DNSRecord:
         Type: AWS::Route53::RecordSet
         Properties:
             Name: !FindInMap [Environments, !Ref 'Environment', Domain]
             HostedZoneId: Z2UM8P3D4FB0Z1
+            Type: A
+            AliasTarget:
+                DNSName: integrations-2121385268.us-east-1.elb.amazonaws.com
+                HostedZoneId: Z35SXDOTRQ7X7K
+    # Private zone
+    DNSRecordPrivate:
+        Type: AWS::Route53::RecordSet
+        Properties:
+            Name: !FindInMap [Environments, !Ref 'Environment', Domain]
+            HostedZoneId: Z009017445V77OH1NNM0
             Type: A
             AliasTarget:
                 DNSName: integrations-2121385268.us-east-1.elb.amazonaws.com
