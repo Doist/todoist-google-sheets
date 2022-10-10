@@ -145,6 +145,8 @@ Resources:
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:VERIFICATION_TOKENS::'
                       - Name: GOOGLE_TRACKING_ID
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_TRACKING_ID::'
+                      - Name: GOOGLE_API_SECRET
+                        ValueFrom: 'arn:aws:secretsmanager:TODO-FROM-INFRA-TEAM'
                       - Name: SENTRY_DSN
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:SENTRY_DSN::'
                       - Name: GOOGLE_API_KEY
