@@ -2,6 +2,7 @@ import { formatString } from '@doist/integrations-common'
 import { Section, Task, TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
+    AnalyticsService,
     AppTokenService,
     CardActions,
     DoistCardBridgeFactory,
@@ -39,6 +40,7 @@ export class ActionsService extends ActionsServiceBase {
         private readonly userDatabaseService: UserDatabaseService,
         private readonly translationService: TranslationService,
         private readonly appTokenService: AppTokenService,
+        private readonly analyticsService: AnalyticsService,
     ) {
         super()
     }
