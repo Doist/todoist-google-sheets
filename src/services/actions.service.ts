@@ -15,6 +15,7 @@ import {
 
 import { BadRequestException, Injectable } from '@nestjs/common'
 
+import { exportEvent } from '../analytics/events'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
 import { Sheets } from '../i18n/en'
 import { convertTasksToCsvString } from '../utils/csv-helpers'
@@ -158,6 +159,8 @@ export class ActionsService extends ActionsServiceBase {
                 csvData: csvData,
                 authToken: token.token,
             })
+
+            this.analyticsService.trackEvents([exportEvent])
 
             return {
                 bridges: [
