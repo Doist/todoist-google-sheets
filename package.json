@@ -87,7 +87,7 @@
     },
     "prettier": "@doist/prettier-config",
     "dependencies": {
-        "@doist/integrations-common": "1.0.17",
+        "@doist/integrations-common": "2.0.0",
         "@doist/todoist-api-typescript": "2.0.4",
         "@doist/ui-extensions-core": "3.2.1",
         "@doist/ui-extensions-server": "1.1.0",
