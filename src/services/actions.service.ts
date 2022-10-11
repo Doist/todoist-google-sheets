@@ -2,18 +2,23 @@ import { formatString } from '@doist/integrations-common'
 import { Section, Task, TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
+    AnalyticsService,
     AppTokenService,
     CardActions,
     DoistCardBridgeFactory,
     IntegrationException,
     isForbiddenError,
     isUnauthorizedError,
+    launchedEvent,
+    launchedNotAuthenticated,
+    loggedOutEvent,
     Submit,
     TranslationService,
 } from '@doist/ui-extensions-server'
 
 import { BadRequestException, Injectable } from '@nestjs/common'
 
+import { exportEvent } from '../analytics/events'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
 import { Sheets } from '../i18n/en'
 import { convertTasksToCsvString } from '../utils/csv-helpers'
@@ -39,6 +44,7 @@ export class ActionsService extends ActionsServiceBase {
         private readonly userDatabaseService: UserDatabaseService,
         private readonly translationService: TranslationService,
         private readonly appTokenService: AppTokenService,
+        private readonly analyticsService: AnalyticsService,
     ) {
         super()
     }
@@ -51,8 +57,11 @@ export class ActionsService extends ActionsServiceBase {
 
     async getInitialView(request: DoistCardRequest): Promise<DoistCardResponse> {
         if (!(await this.googleSheetsService.isAuthenticated(request.context.user.id))) {
+            this.analyticsService.trackEvents([launchedNotAuthenticated])
             return this.googleLoginService.getAuthentication(request.context, true)
         }
+
+        this.analyticsService.trackEvents([launchedEvent])
 
         return request.extensionType === 'settings'
             ? this.getSettingsCard(request)
@@ -71,6 +80,7 @@ export class ActionsService extends ActionsServiceBase {
             })
         }
         await this.userDatabaseService.removeToken(context.user.id)
+        this.analyticsService.trackEvents([loggedOutEvent])
         return this.googleLoginService.getAuthentication(request.context)
     }
 
@@ -156,6 +166,8 @@ export class ActionsService extends ActionsServiceBase {
                 csvData: csvData,
                 authToken: token.token,
             })
+
+            this.analyticsService.trackEvents([exportEvent])
 
             return {
                 bridges: [
