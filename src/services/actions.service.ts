@@ -9,6 +9,9 @@ import {
     IntegrationException,
     isForbiddenError,
     isUnauthorizedError,
+    launchedEvent,
+    launchedNotAuthenticated,
+    loggedOutEvent,
     Submit,
     TranslationService,
 } from '@doist/ui-extensions-server'
@@ -54,8 +57,11 @@ export class ActionsService extends ActionsServiceBase {
 
     async getInitialView(request: DoistCardRequest): Promise<DoistCardResponse> {
         if (!(await this.googleSheetsService.isAuthenticated(request.context.user.id))) {
+            this.analyticsService.trackEvents([launchedNotAuthenticated])
             return this.googleLoginService.getAuthentication(request.context, true)
         }
+
+        this.analyticsService.trackEvents([launchedEvent])
 
         return request.extensionType === 'settings'
             ? this.getSettingsCard(request)
@@ -74,6 +80,7 @@ export class ActionsService extends ActionsServiceBase {
             })
         }
         await this.userDatabaseService.removeToken(context.user.id)
+        this.analyticsService.trackEvents([loggedOutEvent])
         return this.googleLoginService.getAuthentication(request.context)
     }
 
