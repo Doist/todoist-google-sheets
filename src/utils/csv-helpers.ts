@@ -44,7 +44,7 @@ function createTaskRow(
             case 'taskId':
                 items.push(task.id.toString())
                 break
-            case 'content':
+            case 'taskName':
                 items.push(sanitiseText(task.content))
                 break
             case 'sectionId':

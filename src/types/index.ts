@@ -18,7 +18,7 @@ export const ExportOptionsNames = [
 
 export const NonOptionalExportOptionsNames = [
     'taskId',
-    'content',
+    'taskName',
     'sectionId',
     'parentTaskId',
 ] as const

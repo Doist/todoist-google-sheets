@@ -15,7 +15,7 @@ describe('CSV Helpers', () => {
 
                 expect(result).toEqual(
                     toCustomCSV(
-                        'taskId,content,sectionId,parentTaskId,completed,due,priority,description,parentTask,section,assignee,createdDate',
+                        'taskId,taskName,sectionId,parentTaskId,completed,due,priority,description,parentTask,section,assignee,createdDate',
                     ),
                 )
             })
@@ -35,7 +35,7 @@ describe('CSV Helpers', () => {
                         createdDate: false,
                     },
                 })
-                expect(result).toEqual(toCustomCSV('taskId,content,sectionId,parentTaskId'))
+                expect(result).toEqual(toCustomCSV('taskId,taskName,sectionId,parentTaskId'))
             })
 
             it('displays correct headers when some options are turned off', () => {
@@ -55,7 +55,7 @@ describe('CSV Helpers', () => {
                 })
 
                 expect(result).toEqual(
-                    toCustomCSV('taskId,content,sectionId,parentTaskId,completed,due,description'),
+                    toCustomCSV('taskId,taskName,sectionId,parentTaskId,completed,due,description'),
                 )
             })
         })
