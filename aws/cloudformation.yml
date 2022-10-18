@@ -130,6 +130,10 @@ Resources:
                         Value: !Ref 'Environment'
                       - Name: BASE_URL
                         Value: !FindInMap [Environments, !Ref 'Environment', Domain]
+                      - Name: GOOGLE_MEASUREMENT_ID
+                        Value: 'G-25290C6714'
+                      - Name: SENTRY_DSN
+                        Value: 'https://4ade345a53c34d4abfba5ada13c990db@o476415.ingest.sentry.io/6662181'
                   Secrets:
                       - Name: 'DB_NAME'
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:db::'
@@ -143,10 +147,8 @@ Resources:
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:username::'
                       - Name: VERIFICATION_TOKENS
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:VERIFICATION_TOKENS::'
-                      - Name: GOOGLE_TRACKING_ID
-                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_TRACKING_ID::'
-                      - Name: SENTRY_DSN
-                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:SENTRY_DSN::'
+                      - Name: GOOGLE_API_SECRET
+                        ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_API_SECRET::'
                       - Name: GOOGLE_API_KEY
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:GOOGLE_API_KEY::'
                       - Name: GOOGLE_CLIENT_ID
