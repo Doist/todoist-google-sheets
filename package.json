@@ -100,7 +100,7 @@
         "axios": "0.27.2",
         "dayjs": "1.11.6",
         "env-cmd": "10.1.0",
-        "googleapis": "109.0.0",
+        "googleapis": "109.0.1",
         "lodash": "4.17.21",
         "mysql": "2.18.1",
         "reflect-metadata": "0.1.13",
