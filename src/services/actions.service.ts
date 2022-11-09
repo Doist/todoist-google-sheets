@@ -12,6 +12,7 @@ import {
     launchedEvent,
     launchedNotAuthenticated,
     loggedOutEvent,
+    settingsOpenedEvent,
     Submit,
     TranslationService,
 } from '@doist/ui-extensions-server'
@@ -61,8 +62,6 @@ export class ActionsService extends ActionsServiceBase {
             return this.googleLoginService.getAuthentication(request.context, true)
         }
 
-        this.analyticsService.trackEvents([launchedEvent])
-
         return request.extensionType === 'settings'
             ? this.getSettingsCard(request)
             : this.getHomeCard(request)
@@ -86,6 +85,7 @@ export class ActionsService extends ActionsServiceBase {
 
     @Submit({ actionId: CardActions.Settings })
     async getSettingsCard(request: DoistCardRequest): Promise<DoistCardResponse> {
+        this.analyticsService.trackEvents([settingsOpenedEvent])
         const { context } = request
         const user = await this.userDatabaseService.getUser(context.user.id)
         if (!user) {
@@ -205,9 +205,7 @@ export class ActionsService extends ActionsServiceBase {
     }
 
     private getHomeCard(request: DoistCardRequest): Promise<DoistCardResponse> {
-        if (!this.isFromProject(request)) {
-            return Promise.resolve({ card: this.adaptiveCardsService.projectOnlyCard() })
-        }
+        this.analyticsService.trackEvents([launchedEvent])
         const contextData = request.action.params as ContextMenuData
         const card = this.adaptiveCardsService.homeCard({
             projectName: contextData.content,

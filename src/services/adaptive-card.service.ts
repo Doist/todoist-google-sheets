@@ -5,11 +5,8 @@ import {
     ColumnSet,
     Container,
     DoistCard,
-    OpenUrlAction,
-    RichTextBlock,
     SubmitAction,
     TextBlock,
-    TextRun,
     ToggleInput,
 } from '@doist/ui-extensions-core'
 import {
@@ -116,34 +113,6 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         )
         profileDetails.id = PROFILE_DETAILS_ID
         card.addItem(profileDetails)
-
-        return card
-    }
-
-    projectOnlyCard(): DoistCard {
-        const card = this.createEmptyCard()
-
-        const projectOnly = RichTextBlock.from({
-            spacing: 'extraLarge',
-        })
-
-        projectOnly.addInline(
-            TextRun.from({
-                text: this.translationService.getTranslation(Sheets.PROJECT_ONLY),
-            }),
-        )
-        projectOnly.addInline(
-            TextRun.from({
-                text: this.translationService.getTranslation(Core.LEARN_MORE),
-                selectAction: OpenUrlAction.from({
-                    url: this.translationService.getTranslation(Sheets.LEARN_MORE_LINK),
-                    style: 'positive',
-                }),
-                color: 'attention',
-            }),
-        )
-
-        card.addItem(projectOnly)
 
         return card
     }
