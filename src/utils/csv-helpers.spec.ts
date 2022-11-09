@@ -73,7 +73,7 @@ describe('CSV Helpers', () => {
                                     isRecurring: false,
                                     date: new Date('2022-08-09').toISOString(),
                                 },
-                                priority: 4,
+                                priority: 4, // High priority, user will expect 1
                                 description: 'This is a description',
                                 createdAt: new Date(2022, 7, 5).toISOString(),
                                 assigneeId: '12345',
@@ -95,7 +95,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task,1234,,false,,4,This is a description,,My awesome section,,2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task,1234,,false,,1,This is a description,,My awesome section,,2022-08-05T00:00:00.000Z',
                     ),
                 )
             })
@@ -133,7 +133,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task,1234,,false,,4,,,2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task,1234,,false,,1,,,2022-08-05T00:00:00.000Z',
                     ),
                 )
             })
@@ -151,7 +151,7 @@ describe('CSV Helpers', () => {
                                     isRecurring: false,
                                     date: new Date('2022-08-09').toISOString(),
                                 },
-                                priority: 4,
+                                priority: 2,
                                 description: 'This is a description\nAlso on two lines',
                                 createdAt: new Date(2022, 7, 5).toISOString(),
                                 assigneeId: '12345',
@@ -173,7 +173,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task On two lines,1234,,false,,4,This is a description Also on two lines,,My awesome section,,2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task On two lines,1234,,false,,3,This is a description Also on two lines,,My awesome section,,2022-08-05T00:00:00.000Z',
                     ),
                 )
             })
@@ -212,7 +212,7 @@ describe('CSV Helpers', () => {
                 const rows = result.split('\n')
 
                 expect(rows[1]).toEqual(
-                    '10000001...---...My awesome task, but with a comma...---...1234...---......---...false...---......---...4...---...This is a description Also on two lines...---......---...My awesome section...---......---...2022-08-05T00:00:00.000Z',
+                    '10000001...---...My awesome task, but with a comma...---...1234...---......---...false...---......---...1...---...This is a description Also on two lines...---......---...My awesome section...---......---...2022-08-05T00:00:00.000Z',
                 )
             })
         })
