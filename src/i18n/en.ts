@@ -12,7 +12,6 @@ export enum Sheets {
     OPTIONS_HEADER = 'Choose which fields you want to export.',
     PROFILE_DETAILS_WITH_NAME = 'You’re connected to Google as **{0}** ({1}).',
     PROFILE_DETAILS_WITH_NO_NAME = 'You’re connected to Google as **{0}**.',
-    PROJECT_ONLY = 'Exporting is only available for projects. ',
     SHEET_TITLE = 'Todoist Export: {0} from {1}', // {0} is the project name, {1} is the date
     VIEW_SHEET = 'View sheet',
 }
