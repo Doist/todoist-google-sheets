@@ -22,30 +22,6 @@ describe('Core e2e tests', () => {
 
     it('runs the server without crashing', () => expect(app.getHttpServer()).toBeDefined())
 
-    it('returns the project only card when coming from a task and signed in', () => {
-        setupGetUser({
-            authToken: 'kwijibo',
-        } as User)
-        return request(app.getHttpServer())
-            .post('/process')
-            .send({
-                context: { user: { id: 42 }, theme: 'light' },
-                action: {
-                    actionType: 'initial',
-                    params: {
-                        source: 'task',
-                    },
-                },
-            })
-            .expect(200)
-            .expect('Content-Type', /json/)
-            .then((response) => {
-                const body = response.body as DoistCardResponse
-                expect(body.card).toBeDefined()
-                expect(JSON.stringify(body)).toMatch(/Exporting is only available for projects./)
-            })
-    })
-
     test.each<DoistCardExtensionType>(['context-menu', 'settings'])(
         'returns the login card (assuming first run)',
         (extensionType: DoistCardExtensionType) => {

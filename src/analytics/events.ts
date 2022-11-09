@@ -1,3 +1,5 @@
 import { eventsFactory } from '@doist/integrations-common'
 
-export const exportEvent = eventsFactory.primaryInteraction()
+const exportEvent = eventsFactory.primaryInteraction()
+
+export { exportEvent }
