@@ -31,13 +31,6 @@ function createHeaderRow(exportOptions: ExportOptionsToUse): string {
     return items.join(DELIMITER)
 }
 
-const PRIORITY_MAP: Record<number, string> = {
-    1: '4',
-    2: '3',
-    3: '2',
-    4: '1',
-}
-
 function createTaskRow(
     task: Task,
     exportOptions: ExportOptionsToUse,
@@ -78,7 +71,7 @@ function createTaskRow(
             case 'priority':
                 // Todoist API returns a high priority as '4', but we want to display it as '1' as that
                 // will be what the user expects.
-                items.push(PRIORITY_MAP[task.priority] ?? '')
+                items.push(String(5 - task.priority))
                 break
             case 'description':
                 items.push(task.description ? sanitiseText(task.description) : '')
