@@ -15,7 +15,6 @@ import {
     CardActions,
     Core,
     createBackImageButton,
-    createHeader,
     createIconImage,
     createProfileDetails,
     createSignOutButton,
@@ -148,8 +147,7 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         const leftColumn = leftColumnContent ? [leftColumnContent] : []
         const middleColumn = middleColumnContent ? [middleColumnContent] : []
         const rightColumn = rightColumnContent ? [rightColumnContent] : []
-        return createHeader(
-            this,
+        return this.createHeader(
             leftColumn,
             middleColumn,
             [autoColumnSet(rightColumn)],

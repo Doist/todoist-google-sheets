@@ -69,7 +69,9 @@ function createTaskRow(
                 items.push(task.due?.string ?? '')
                 break
             case 'priority':
-                items.push(task.priority.toString())
+                // Todoist API returns a high priority as '4', but we want to display it as '1' as that
+                // will be what the user expects.
+                items.push(String(5 - task.priority))
                 break
             case 'description':
                 items.push(task.description ? sanitiseText(task.description) : '')

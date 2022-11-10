@@ -31,9 +31,9 @@ import { GoogleSheetsService } from './google-sheets.service'
 import { UserDatabaseService } from './user-database.service'
 
 import type {
-    ContextMenuData,
     DoistCardRequest,
     DoistCardResponse,
+    TodoistContextMenuData,
 } from '@doist/ui-extensions-core'
 
 @Injectable()
@@ -48,12 +48,6 @@ export class ActionsService extends ActionsServiceBase {
         private readonly analyticsService: AnalyticsService,
     ) {
         super()
-    }
-
-    private isFromProject(request: DoistCardRequest): boolean {
-        const contextData = request.action.params as ContextMenuData | undefined
-
-        return contextData?.source === 'project'
     }
 
     async getInitialView(request: DoistCardRequest): Promise<DoistCardResponse> {
@@ -122,7 +116,7 @@ export class ActionsService extends ActionsServiceBase {
             })
         }
 
-        const contextData = action.params as ContextMenuData
+        const contextData = action.params as TodoistContextMenuData
         const todoistClient = new TodoistApi(appToken)
 
         const exportOptions = getExportOptions(action.inputs)
@@ -131,7 +125,7 @@ export class ActionsService extends ActionsServiceBase {
         let sections: Section[] = []
 
         try {
-            tasks = await todoistClient.getTasks({ projectId: String(contextData.sourceId) })
+            tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
 
             if (tasks.length === 0) {
                 return {
@@ -206,7 +200,7 @@ export class ActionsService extends ActionsServiceBase {
 
     private getHomeCard(request: DoistCardRequest): Promise<DoistCardResponse> {
         this.analyticsService.trackEvents([launchedEvent])
-        const contextData = request.action.params as ContextMenuData
+        const contextData = request.action.params as TodoistContextMenuData
         const card = this.adaptiveCardsService.homeCard({
             projectName: contextData.content,
         })
