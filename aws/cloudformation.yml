@@ -134,6 +134,8 @@ Resources:
                         Value: 'G-25290C6714'
                       - Name: SENTRY_DSN
                         Value: 'https://4ade345a53c34d4abfba5ada13c990db@o476415.ingest.sentry.io/6662181'
+                      - Name: ANALYTICS_VERSION
+                        Value: 'GA4'
                   Secrets:
                       - Name: 'DB_NAME'
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/mysql-woNqVM:db::'
