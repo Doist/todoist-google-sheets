@@ -4,9 +4,9 @@ export enum Sheets {
     EXPORT_COMPLETED = 'Export completed',
     HELP_CENTER_LINK = 'https://get.todoist.help/hc/requests/new?subject=Export%20to%20Google%20Sheets',
     LEARN_MORE_LINK = 'https://todoist.com/help/TBD',
-    LOGIN_INSTRUCTIONS = "Log in to your Google account to export your project's tasks straight to Google Sheets.",
+    LOGIN_INSTRUCTIONS = 'You need to connect this integration to your Google account to use it. ',
     LOGIN_SUCCESSFUL = 'Successfully logged into Google',
-    LOGIN_TITLE = 'Log in with Google',
+    LOGIN_TITLE = 'Did you already authenticate with your Google account?',
     MAIN_TITLE = 'Export **{0}**', // {0} is the project name
     NO_TASKS = '**{0}** has no tasks to export', // {0} is the project name
     OPTIONS_HEADER = 'Choose which fields you want to export.',
