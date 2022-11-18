@@ -19,7 +19,7 @@ export function setupGetGoogleToken(token: string | undefined) {
     )
 }
 
-export function setupGetAppToken(token: string | undefined) {
+export function setupGetAppToken(token: string | never) {
     jest.spyOn(AppTokenService.prototype, 'appToken', 'get').mockImplementation(() => token)
 }
 
