@@ -46,7 +46,9 @@ describe('Core e2e tests', () => {
                 .then((response) => {
                     const body = response.body as DoistCardResponse
                     expect(body.card).toBeDefined()
-                    expect(JSON.stringify(body)).toMatch(/Log in with Google/)
+                    expect(JSON.stringify(body)).toMatch(
+                        /You need to connect this integration to your Google account to use it/,
+                    )
                 })
         },
     )
