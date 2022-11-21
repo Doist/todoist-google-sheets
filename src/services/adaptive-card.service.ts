@@ -1,6 +1,5 @@
 import { formatString } from '@doist/integrations-common'
 import {
-    ActionSet,
     CardElement,
     Column,
     ColumnSet,
@@ -19,7 +18,6 @@ import {
     createIconImage,
     createProfileDetails,
     createSignOutButton,
-    pageActions,
     SETTINGS_IMAGE,
 } from '@doist/ui-extensions-server'
 
