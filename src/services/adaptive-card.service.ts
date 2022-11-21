@@ -1,6 +1,5 @@
 import { formatString } from '@doist/integrations-common'
 import {
-    ActionSet,
     CardElement,
     Column,
     ColumnSet,
@@ -19,7 +18,6 @@ import {
     createIconImage,
     createProfileDetails,
     createSignOutButton,
-    pageActions,
     SETTINGS_IMAGE,
 } from '@doist/ui-extensions-server'
 
@@ -82,17 +80,10 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         card.addItem(this.createExportOptions())
 
         card.addItem(
-            pageActions(
-                ActionSet.fromWithActions({
-                    actions: [
-                        SubmitAction.from({
-                            title: this.translationService.getTranslation(Sheets.EXPORT_BUTTON),
-                            style: 'positive',
-                            id: SheetsCardActions.Export,
-                        }),
-                    ],
-                }),
-            ),
+            this.createConfirmAndCancelActions({
+                confirmationButtonKey: Sheets.EXPORT_BUTTON,
+                confirmationButtonId: SheetsCardActions.Export,
+            }),
         )
 
         return card
