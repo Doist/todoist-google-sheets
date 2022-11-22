@@ -65,7 +65,8 @@ describe('AdaptiveCardService', () => {
         it('contains the project name in the title', () => {
             const card = target.homeCard({ projectName: 'My Project' })
             const title = card.getElementById(TITLE_ID) as TextBlock
-            expect(title.text).toEqual('Export **My Project**')
+            expect(title.text).toEqual('My Project')
+            expect(title.isSubtle).toBeTruthy()
         })
 
         it('has toggle inputs for each of the toggleable options', () => {

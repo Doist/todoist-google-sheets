@@ -4,6 +4,7 @@ import {
     Column,
     ColumnSet,
     Container,
+    createIconButton,
     DoistCard,
     SubmitAction,
     TextBlock,
@@ -13,9 +14,7 @@ import {
     AdaptiveCardService as AdaptiveCardServiceBase,
     autoColumnSet,
     CardActions,
-    Core,
     createBackImageButton,
-    createIconImage,
     createProfileDetails,
     createSignOutButton,
     SETTINGS_IMAGE,
@@ -56,37 +55,50 @@ const optionsTranslationKeys: OptionsKeys = {
 @Injectable()
 export class AdaptiveCardService extends AdaptiveCardServiceBase {
     homeCard({ projectName }: HomeCardOptions): DoistCard {
-        const card = this.createEmptyCard()
-        const header = this.createMainHeader({
-            rightColumnContent: createIconImage(this, {
-                imagePath: SETTINGS_IMAGE,
-                altText: this.translationService.getTranslation(Core.SETTINGS_TITLE),
-                selectAction: SubmitAction.from({
-                    id: CardActions.Settings,
+        return DoistCard.fromWithItems({
+            doistCardVersion: '0.6',
+            items: [
+                TextBlock.from({
+                    text: this.translationService.getTranslation(Sheets.PROJECT_TITLE),
+                    weight: 'bolder',
                 }),
-            }),
-            middleColumnContent: TextBlock.from({
-                id: TITLE_ID,
-                text: formatString(
-                    this.translationService.getTranslation(Sheets.MAIN_TITLE),
-                    projectName,
-                ),
-                size: 'large',
-            }),
+                TextBlock.from({
+                    id: TITLE_ID,
+                    text: projectName,
+                    isSubtle: true,
+                    wrap: true,
+                }),
+                this.createExportOptions(),
+
+                ColumnSet.fromWithColumns({
+                    spacing: 'medium',
+                    columns: [
+                        Column.fromWithItems({
+                            items: [
+                                createIconButton({
+                                    action: SubmitAction.from({
+                                        id: CardActions.Settings,
+                                    }),
+                                    buttonText: this.translationService.getTranslation(
+                                        Sheets.GOOGLE_ACCOUNT,
+                                    ),
+                                    iconUrl: this.createThemeBasedUrl(SETTINGS_IMAGE),
+                                    isSubtle: false,
+                                }),
+                            ],
+                        }),
+                        Column.fromWithItems({
+                            items: [
+                                this.createConfirmAndCancelActions({
+                                    confirmationButtonKey: Sheets.EXPORT_BUTTON,
+                                    confirmationButtonId: SheetsCardActions.Export,
+                                }),
+                            ],
+                        }),
+                    ],
+                }),
+            ],
         })
-
-        card.addItem(header)
-
-        card.addItem(this.createExportOptions())
-
-        card.addItem(
-            this.createConfirmAndCancelActions({
-                confirmationButtonKey: Sheets.EXPORT_BUTTON,
-                confirmationButtonId: SheetsCardActions.Export,
-            }),
-        )
-
-        return card
     }
 
     settingsCard({ user }: { user: User }): DoistCard {
@@ -161,7 +173,7 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         const optionsHeader = TextBlock.from({
             id: OPTIONS_HEADER_ID,
             text: this.translationService.getTranslation(Sheets.OPTIONS_HEADER),
-            isSubtle: true,
+            weight: 'bolder',
         })
 
         const columns = new ColumnSet()
