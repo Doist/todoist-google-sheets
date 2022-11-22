@@ -203,11 +203,7 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         container.addItem(optionsHeader)
         container.addItem(columns)
         container.addItem(
-            TextBlock.from({
-                isSubtle: true,
-                text: this.translationService.getTranslation(Sheets.ALWAYS_EXPORTED),
-                wrap: true,
-            }),
+            this.createTextWithLearnMore(Sheets.ALWAYS_EXPORTED, Sheets.LEARN_MORE_LINK),
         )
 
         return container
