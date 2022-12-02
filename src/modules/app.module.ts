@@ -6,8 +6,6 @@ import {
     AuthModule,
     CoreModule,
     ErrorModule,
-    LoginCardInformation,
-    LoginService,
     TokenValidator,
     UserDatabaseService as UserDatabaseServiceBase,
 } from '@doist/ui-extensions-server'
@@ -17,7 +15,6 @@ import { Module } from '@nestjs/common'
 import { Sheets } from '../i18n/en'
 import { ActionsService } from '../services/actions.service'
 import { AdaptiveCardService } from '../services/adaptive-card.service'
-import { GoogleLoginService } from '../services/google-login.service'
 import { GoogleSheetsService } from '../services/google-sheets.service'
 import { UserDatabaseService } from '../services/user-database.service'
 
@@ -41,7 +38,6 @@ import { DatabaseModule } from './database.module'
             },
             appName: 'Todoist',
             providers: [
-                LoginService,
                 GoogleSheetsService,
                 {
                     provide: TokenValidator,
@@ -56,21 +52,8 @@ import { DatabaseModule } from './database.module'
                     provide: AuthenticationClient,
                     useExisting: GoogleSheetsService,
                 },
-                {
-                    provide: GoogleLoginService,
-                    useExisting: LoginService,
-                },
-                {
-                    provide: LoginService.OPTIONS,
-                    useValue: {
-                        loginTitle: Sheets.LOGIN_TITLE,
-                        loginInstructions: Sheets.LOGIN_INSTRUCTIONS,
-                        learnMoreLink: Sheets.LEARN_MORE_LINK,
-                        loginCardVersion: 'v2',
-                    } as LoginCardInformation,
-                },
             ],
-            exports: [GoogleSheetsService, GoogleLoginService],
+            exports: [GoogleSheetsService],
         }),
         ErrorModule.forRoot({
             errorCardOptions: {
