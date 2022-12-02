@@ -26,7 +26,6 @@ import { convertTasksToCsvString } from '../utils/csv-helpers'
 import { getExportOptions } from '../utils/input-helpers'
 
 import { AdaptiveCardService } from './adaptive-card.service'
-import { GoogleLoginService } from './google-login.service'
 import { GoogleSheetsService } from './google-sheets.service'
 import { UserDatabaseService } from './user-database.service'
 
@@ -40,7 +39,6 @@ import type {
 export class ActionsService extends ActionsServiceBase {
     constructor(
         private readonly googleSheetsService: GoogleSheetsService,
-        private readonly googleLoginService: GoogleLoginService,
         private readonly adaptiveCardsService: AdaptiveCardService,
         private readonly userDatabaseService: UserDatabaseService,
         private readonly translationService: TranslationService,
@@ -53,12 +51,33 @@ export class ActionsService extends ActionsServiceBase {
     async getInitialView(request: DoistCardRequest): Promise<DoistCardResponse> {
         if (!(await this.googleSheetsService.isAuthenticated(request.context.user.id))) {
             this.analyticsService.trackEvents([launchedNotAuthenticated])
-            return this.googleLoginService.getAuthentication(request.context, true)
+            return this.getAuthentication(request, true)
         }
 
         return request.extensionType === 'settings'
             ? this.getSettingsCard(request)
             : this.getHomeCard(request)
+    }
+
+    private getAuthentication(
+        request: DoistCardRequest,
+        isInitialLaunch = false,
+    ): Promise<DoistCardResponse> {
+        if (isInitialLaunch) {
+            this.analyticsService.trackEvents([launchedNotAuthenticated])
+        }
+
+        const card = this.adaptiveCardsService.loginCard({
+            loginCardInformation: {
+                loginTitle: Sheets.LOGIN_TITLE,
+                loginInstructions: Sheets.LOGIN_INSTRUCTIONS,
+                learnMoreLink: Sheets.LEARN_MORE_LINK,
+                authUrl: this.googleSheetsService.getAuthorizationUrl(request.context.user.id),
+            },
+            extensionType: request.extensionType,
+        })
+
+        return Promise.resolve({ card })
     }
 
     @Submit({ actionId: CardActions.LogOut })
@@ -74,7 +93,7 @@ export class ActionsService extends ActionsServiceBase {
         }
         await this.userDatabaseService.removeToken(context.user.id)
         this.analyticsService.trackEvents([loggedOutEvent])
-        return this.googleLoginService.getAuthentication(request.context)
+        return this.getAuthentication(request)
     }
 
     @Submit({ actionId: CardActions.Settings })
@@ -83,7 +102,7 @@ export class ActionsService extends ActionsServiceBase {
         const { context } = request
         const user = await this.userDatabaseService.getUser(context.user.id)
         if (!user) {
-            return this.googleLoginService.getAuthentication(context)
+            return this.getAuthentication(request)
         }
         const card = this.adaptiveCardsService.settingsCard({ user })
         return { card }
@@ -95,7 +114,7 @@ export class ActionsService extends ActionsServiceBase {
 
         const user = await this.userDatabaseService.getUser(context.user.id)
         if (!user) {
-            return this.googleLoginService.getAuthentication(context)
+            return this.getAuthentication(request)
         }
 
         const token = await this.googleSheetsService.getCurrentOrRefreshedToken(context.user.id)

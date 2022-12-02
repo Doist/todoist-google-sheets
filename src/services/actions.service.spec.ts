@@ -89,11 +89,8 @@ describe('ActionsService', () => {
         it("returns the login screen if the user's token has expired", async () => {
             setupGetGoogleToken('kwijibo')
             setupGetUser(undefined)
-            const getAuthentication = jest
-                .spyOn(target['googleLoginService'], 'getAuthentication')
-                .mockImplementation(() => Promise.resolve({}))
 
-            await target.export({
+            const { card } = await target.export({
                 context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
                 action: {
                     actionType: 'submit',
@@ -110,7 +107,9 @@ describe('ActionsService', () => {
                 maximumDoistCardVersion: 0.5,
             })
 
-            expect(getAuthentication).toHaveBeenCalled()
+            expect(JSON.stringify(card?.toJSON())).toMatch(
+                /Before using this integration you need to sign in with Google. Do you want to authenticate with your Google account now\?/,
+            )
         })
 
         it('does not send anything to google sheets if no tasks', async () => {

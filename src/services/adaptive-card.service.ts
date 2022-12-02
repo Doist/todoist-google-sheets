@@ -1,22 +1,32 @@
 import { formatString } from '@doist/integrations-common'
 import {
+    ActionSet,
     CardElement,
     Column,
     ColumnSet,
     Container,
     createIconButton,
     DoistCard,
+    DoistCardActionData,
+    DoistCardExtensionType,
+    Image,
+    OpenUrlAction,
+    RichTextBlock,
     SubmitAction,
     TextBlock,
+    TextRun,
     ToggleInput,
 } from '@doist/ui-extensions-core'
 import {
     AdaptiveCardService as AdaptiveCardServiceBase,
     autoColumnSet,
     CardActions,
+    columnSet,
+    Core,
     createBackImageButton,
     createProfileDetails,
     createSignOutButton,
+    LoginCardInformation,
     SETTINGS_IMAGE,
 } from '@doist/ui-extensions-server'
 
@@ -32,6 +42,8 @@ import type { User } from '../entities/user.entity'
 export const PROFILE_DETAILS_ID = 'profile-details'
 export const TITLE_ID = 'title'
 export const OPTIONS_HEADER_ID = 'options-header'
+
+const GOOGLE_SIGNIN_IMAGE = '/images/google-signin-{0}.png'
 
 type HomeCardOptions = {
     projectName: string
@@ -142,6 +154,98 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         )
 
         return card
+    }
+
+    loginCard({
+        loginCardInformation,
+        displayUnauthorized = false,
+        continueButtonData,
+        extensionType,
+    }: {
+        loginCardInformation: LoginCardInformation
+        displayUnauthorized?: boolean
+        continueButtonData?: () => DoistCardActionData | undefined
+        extensionType?: DoistCardExtensionType
+    }): DoistCard {
+        const { authUrl, loginInstructions, loginTitle, learnMoreLink } = loginCardInformation
+        return DoistCard.fromWithItems({
+            doistCardVersion: '0.3',
+            items: [
+                // Unauthorised text, eg, if an external API has returned 403 and we need to
+                // reauthenticate.
+                ...(displayUnauthorized
+                    ? [
+                          TextBlock.from({
+                              text: this.translationService.getTranslation(Core.UNAUTHORIZED),
+                              color: 'attention',
+                              wrap: true,
+                          }),
+                      ]
+                    : []),
+                // eg, "Did you already authenticate with Google?"
+                TextBlock.from({
+                    text: this.translationService.getTranslation(loginTitle),
+                    wrap: true,
+                }),
+                Image.from({
+                    url: this.createThemeBasedUrl(GOOGLE_SIGNIN_IMAGE),
+                    selectAction: OpenUrlAction.from({
+                        url: authUrl,
+                    }),
+                    pixelHeight: 40,
+                    spacing: 'medium',
+                }),
+                // eg, "You need to connect this integration with Google to continue." with a
+                // learn more link.
+                RichTextBlock.fromWithInlines({
+                    spacing: 'medium',
+                    inlines: [
+                        TextRun.from({
+                            text: this.translationService.getTranslation(loginInstructions),
+                            isSubtle: true,
+                            size: 'small',
+                        }),
+                        ...(learnMoreLink
+                            ? [
+                                  TextRun.from({
+                                      spacing: 'small',
+                                      text: this.translationService.getTranslation(Core.LEARN_MORE),
+                                      selectAction: OpenUrlAction.from({
+                                          url: learnMoreLink,
+                                      }),
+                                      color: 'attention',
+                                      size: 'small',
+                                  }),
+                              ]
+                            : []),
+                    ],
+                }),
+                columnSet(
+                    ActionSet.fromWithActions({
+                        spacing: 'large',
+                        actions: [
+                            SubmitAction.from({
+                                id: CardActions.Close,
+                                title: this.translationService.getTranslation(Core.CANCEL),
+                            }),
+                            SubmitAction.from({
+                                id: CardActions.Continue,
+                                title: this.translationService.getTranslation(
+                                    Sheets.ALREADY_AUTHENTICATED,
+                                ),
+                                data: continueButtonData?.(),
+                                associatedInputs: 'none',
+                                style: 'positive',
+                            }),
+                        ],
+                    }),
+                    {
+                        horizontalAlignment: extensionType === 'settings' ? undefined : 'right',
+                        spacing: 'medium',
+                    },
+                ),
+            ],
+        })
     }
 
     private createMainHeader({
