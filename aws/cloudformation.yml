@@ -309,7 +309,7 @@ Resources:
                           Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
                       Condition:
                           StringLike:
-                              token.actions.githubusercontent.com:sub: !Sub 'repo:Doist/${ServiceName}:*'
+                              token.actions.githubusercontent.com:sub: !Sub 'repo:Doist/${ServiceName}:ref:refs/heads/main'
             ManagedPolicyArns:
                 - !Ref PolicyECS
                 - !Ref PolicyCFN
