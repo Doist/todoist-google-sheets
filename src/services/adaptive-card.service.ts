@@ -307,7 +307,10 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
         container.addItem(optionsHeader)
         container.addItem(columns)
         container.addItem(
-            this.createTextWithLearnMore(Sheets.ALWAYS_EXPORTED, Sheets.LEARN_MORE_LINK),
+            this.createTextWithLearnMore({
+                textKey: Sheets.ALWAYS_EXPORTED,
+                learnMoreUrl: Sheets.LEARN_MORE_LINK,
+            }),
         )
 
         return container
