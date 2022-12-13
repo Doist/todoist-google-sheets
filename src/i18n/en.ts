@@ -5,7 +5,7 @@ export enum Sheets {
     EXPORTING = 'Exporting tasks...',
     GOOGLE_ACCOUNT = 'Google account',
     HELP_CENTER_LINK = 'https://todoist.com/contact',
-    LEARN_MORE_LINK = 'https://todoist.com/help/articles/experimental-features',
+    LEARN_MORE_LINK = 'https://todoist.com/help/articles/6835757057564',
     LOGIN_INSTRUCTIONS = 'You need to connect this integration to your Google account to use it. ',
     LOGIN_SUCCESSFUL = 'Successfully logged into Google',
     LOGIN_TITLE = 'Before using this integration you need to sign in with Google. Do you want to authenticate with your Google account now?',
