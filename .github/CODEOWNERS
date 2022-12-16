@@ -1,3 +1,4 @@
 aws/* @doist/Infrastructure
 .github/workflows/* @doist/Infrastructure
-server.Dockerfile Makefile @doist/Infrastructure
+server.Dockerfile @doist/Infrastructure
+Makefile @doist/Infrastructure
