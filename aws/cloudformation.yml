@@ -246,11 +246,7 @@ Resources:
                           - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ServiceName}'
                     - Effect: Allow
                       Action:
-                          - ecs:RegisterTaskDefinition
-                          - ecs:DeregisterTaskDefinition
                           - ecs:DescribeServices
-                          - ecr:GetAuthorizationToken
-                          - ecs:DescribeTaskDefinition
                       Resource:
                           - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${ServiceName}:*'
                     - Effect: Allow
