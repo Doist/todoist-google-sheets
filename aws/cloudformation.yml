@@ -163,7 +163,6 @@ Resources:
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:DB_ENCRYPTION_ALGORITHM::'
                       - Name: DB_ENCRYPTION_IV_LENGTH
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:DB_ENCRYPTION_IV_LENGTH::'
-
                   Ulimits:
                       - Name: nofile
                         HardLimit: 5000
@@ -201,30 +200,8 @@ Resources:
                             Action:
                                 - 'secretsmanager:GetSecretValue'
                             Resource:
-                                - !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:integrations/${ServiceName}/*'
-                          - Effect: Allow
-                            Action:
-                                - 'secretsmanager:ListSecrets'
-                            Resource:
-                                - '*'
-
-    # IAM role for GitHub actions
-    PolicyAS:
-        Type: AWS::IAM::ManagedPolicy
-        Properties:
-            PolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                    - Effect: Allow
-                      Action:
-                          - application-autoscaling:DescribeScalableTargets
-                          - application-autoscaling:RegisterScalableTarget
-                          - application-autoscaling:DeregisterScalableTarget
-                          - application-autoscaling:DescribeScalingPolicies
-                          - application-autoscaling:PutScalingPolicy
-                          - application-autoscaling:DeleteScalingPolicy
-                          - application-autoscaling:DescribeScheduledActions
-                      Resource: '*'
+                                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:integrations/${ServiceName}/secrets-4oa5bD'
+                                - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:integrations/${ServiceName}/mysql-woNqVM'
 
     PolicyCFN:
         Type: AWS::IAM::ManagedPolicy
@@ -236,12 +213,12 @@ Resources:
                       Action:
                           - 'cloudformation:*'
                       Resource:
-                          - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
+                          - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
                     - Effect: Deny
                       Action:
                           - 'cloudformation:DeleteStack'
                       Resource:
-                          - !Sub 'arn:aws:cloudformation:*:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
+                          - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
 
     PolicyECS:
         Type: AWS::IAM::ManagedPolicy
@@ -254,10 +231,8 @@ Resources:
                           - ecs:UpdateService
                           - ecs:CreateService
                           - ecs:DeleteService
-                          - ecs:UntagResource
-                          - ecs:TagResource
                       Resource:
-                          - !Sub 'arn:aws:ecs:*:${AWS::AccountId}:service/${Cluster}/${ServiceName}*'
+                          - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${Cluster}/${ServiceName}'
                     - Effect: Allow
                       Action:
                           - ecr:GetDownloadUrlForLayer
@@ -268,7 +243,7 @@ Resources:
                           - ecr:BatchCheckLayerAvailability
                           - ecr:PutImage
                       Resource:
-                          - !Sub 'arn:aws:ecr:*:${AWS::AccountId}:repository/${ServiceName}'
+                          - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ServiceName}'
                     - Effect: Allow
                       Action:
                           - ecs:RegisterTaskDefinition
@@ -276,6 +251,11 @@ Resources:
                           - ecs:DescribeServices
                           - ecr:GetAuthorizationToken
                           - ecs:DescribeTaskDefinition
+                      Resource:
+                          - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${ServiceName}:*'
+                    - Effect: Allow
+                      Action:
+                          - ecr:GetAuthorizationToken
                       Resource: '*'
 
     PolicyIAM:
@@ -288,13 +268,8 @@ Resources:
                       Action:
                           - iam:PassRole
                           - iam:GetRole
-                          - iam:ListPolicyVersions
-                          - iam:GetPolicy
-                          - iam:CreatePolicyVersion
-                          - iam:DeletePolicyVersion
                       Resource:
-                          - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-*'
-                          - !Sub 'arn:aws:iam::${AWS::AccountId}:policy/${ServiceName}-*'
+                          - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-${Environment}-execution'
                           - arn:aws:iam::011833101604:role/ecsEventsRole
 
     GitHubRoleCI:
@@ -310,11 +285,26 @@ Resources:
                       Condition:
                           StringLike:
                               token.actions.githubusercontent.com:sub: !Sub 'repo:Doist/${ServiceName}:ref:refs/heads/main'
+                    - Effect: Deny
+                      Action:
+                        - application-autoscaling:*
+                        - autoscaling-plans:*
+                        - cloudwatch:*
+                        - events:*
+                        - logs:*
+                        - sqs:*
+                        - sns:*
+                        - ecs:*
+                        - iam:*
+                      Condition:
+                        ForAllValues:StringNotEqualsIfExists:
+                            aws:CalledVia:
+                                - cloudformation.amazonaws.com
+                      Resource: '*'
             ManagedPolicyArns:
                 - !Ref PolicyECS
                 - !Ref PolicyCFN
                 - !Ref PolicyIAM
-                - !Ref PolicyAS
 
     # The service. The service is a resource which allows you to run multiple
     # copies of a type of task, and gather up their logs and metrics, as well
