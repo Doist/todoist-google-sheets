@@ -283,24 +283,30 @@ Resources:
                       Principal:
                           Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
                       Condition:
-                          StringLike:
+                          StringEquals:
                               token.actions.githubusercontent.com:sub: !Sub 'repo:Doist/${ServiceName}:ref:refs/heads/main'
-                    - Effect: Deny
-                      Action:
-                        - application-autoscaling:*
-                        - autoscaling-plans:*
-                        - cloudwatch:*
-                        - events:*
-                        - logs:*
-                        - sqs:*
-                        - sns:*
-                        - ecs:*
-                        - iam:*
-                      Condition:
-                        ForAllValues:StringNotEqualsIfExists:
-                            aws:CalledVia:
-                                - cloudformation.amazonaws.com
-                      Resource: '*'
+                              token.actions.githubusercontent.com:aud: 'sts.amazonaws.com'
+            Policies:
+                - PolicyName: deployment-permissions
+                  PolicyDocument:
+                      Version: '2012-10-17'
+                      Statement:
+                          - Effect: Deny
+                            Action:
+                                - application-autoscaling:*
+                                - autoscaling-plans:*
+                                - cloudwatch:*
+                                - events:*
+                                - logs:*
+                                - sqs:*
+                                - sns:*
+                                - ecs:*
+                                - iam:*
+                            Resource: '*'
+                            Condition:
+                                ForAllValues:StringNotEqualsIfExists:
+                                    aws:CalledVia:
+                                        - cloudformation.amazonaws.com
             ManagedPolicyArns:
                 - !Ref PolicyECS
                 - !Ref PolicyCFN
