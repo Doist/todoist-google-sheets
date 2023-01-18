@@ -238,6 +238,12 @@ Resources:
                           - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${Cluster}/${ServiceName}'
                     - Effect: Allow
                       Action:
+                          - ecs:RegisterTaskDefinition
+                          - ecs:DeregisterTaskDefinition
+                          - ecs:DescribeTaskDefinition
+                      Resource: '*'
+                    - Effect: Allow
+                      Action:
                           - ecr:GetDownloadUrlForLayer
                           - ecr:BatchGetImage
                           - ecr:CompleteLayerUpload
