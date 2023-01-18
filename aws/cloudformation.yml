@@ -231,11 +231,14 @@ Resources:
                           - ecs:UpdateService
                           - ecs:CreateService
                           - ecs:DeleteService
+                      Resource:
+                          - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${Cluster}/${ServiceName}'
+                    - Effect: Allow
+                      Action:
                           - ecs:RegisterTaskDefinition
                           - ecs:DeregisterTaskDefinition
                           - ecs:DescribeTaskDefinition
-                      Resource:
-                          - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${Cluster}/${ServiceName}'
+                      Resource: '*'
                     - Effect: Allow
                       Action:
                           - ecr:GetDownloadUrlForLayer
