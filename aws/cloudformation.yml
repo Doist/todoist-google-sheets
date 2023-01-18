@@ -231,6 +231,9 @@ Resources:
                           - ecs:UpdateService
                           - ecs:CreateService
                           - ecs:DeleteService
+                          - ecs:RegisterTaskDefinition
+                          - ecs:DeregisterTaskDefinition
+                          - ecs:DescribeTaskDefinition
                       Resource:
                           - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${Cluster}/${ServiceName}'
                     - Effect: Allow
