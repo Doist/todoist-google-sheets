@@ -203,80 +203,6 @@ Resources:
                                 - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:integrations/${ServiceName}/secrets-4oa5bD'
                                 - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:integrations/${ServiceName}/mysql-woNqVM'
 
-    PolicyCFN:
-        Type: AWS::IAM::ManagedPolicy
-        Properties:
-            PolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                    - Effect: Allow
-                      Action:
-                          - 'cloudformation:*'
-                      Resource:
-                          - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
-                    - Effect: Deny
-                      Action:
-                          - 'cloudformation:DeleteStack'
-                      Resource:
-                          - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
-
-    PolicyECS:
-        Type: AWS::IAM::ManagedPolicy
-        Properties:
-            PolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                    - Effect: Allow
-                      Action:
-                          - ecs:UpdateService
-                          - ecs:CreateService
-                          - ecs:DeleteService
-                          - ecs:RegisterTaskDefinition
-                          - ecs:DeregisterTaskDefinition
-                          - ecs:DescribeTaskDefinition
-                      Resource:
-                          - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${Cluster}/${ServiceName}'
-                    - Effect: Allow
-                      Action:
-                          - ecs:RegisterTaskDefinition
-                          - ecs:DeregisterTaskDefinition
-                          - ecs:DescribeTaskDefinition
-                      Resource: '*'
-                    - Effect: Allow
-                      Action:
-                          - ecr:GetDownloadUrlForLayer
-                          - ecr:BatchGetImage
-                          - ecr:CompleteLayerUpload
-                          - ecr:UploadLayerPart
-                          - ecr:InitiateLayerUpload
-                          - ecr:BatchCheckLayerAvailability
-                          - ecr:PutImage
-                      Resource:
-                          - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ServiceName}'
-                    - Effect: Allow
-                      Action:
-                          - ecs:DescribeServices
-                      Resource:
-                          - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${ServiceName}:*'
-                    - Effect: Allow
-                      Action:
-                          - ecr:GetAuthorizationToken
-                      Resource: '*'
-
-    PolicyIAM:
-        Type: AWS::IAM::ManagedPolicy
-        Properties:
-            PolicyDocument:
-                Version: 2012-10-17
-                Statement:
-                    - Effect: Allow
-                      Action:
-                          - iam:PassRole
-                          - iam:GetRole
-                      Resource:
-                          - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-${Environment}-execution'
-                          - arn:aws:iam::011833101604:role/ecsEventsRole
-
     GitHubRoleCI:
         Type: AWS::IAM::Role
         Properties:
@@ -296,6 +222,61 @@ Resources:
                   PolicyDocument:
                       Version: '2012-10-17'
                       Statement:
+                          - Effect: Allow
+                            Action:
+                                - 'cloudformation:*'
+                            Resource:
+                                - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
+                          - Effect: Deny
+                            Action:
+                                - 'cloudformation:DeleteStack'
+                            Resource:
+                                - !Sub 'arn:aws:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/${ServiceName}-${Environment}/*'
+
+                          - Effect: Allow
+                            Action:
+                                - ecs:UpdateService
+                                - ecs:CreateService
+                                - ecs:DeleteService
+                                - ecs:RegisterTaskDefinition
+                                - ecs:DeregisterTaskDefinition
+                                - ecs:DescribeTaskDefinition
+                            Resource:
+                                - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:service/${Cluster}/${ServiceName}'
+                          - Effect: Allow
+                            Action:
+                                - ecs:RegisterTaskDefinition
+                                - ecs:DeregisterTaskDefinition
+                                - ecs:DescribeTaskDefinition
+                            Resource: '*'
+                          - Effect: Allow
+                            Action:
+                                - ecr:GetDownloadUrlForLayer
+                                - ecr:BatchGetImage
+                                - ecr:CompleteLayerUpload
+                                - ecr:UploadLayerPart
+                                - ecr:InitiateLayerUpload
+                                - ecr:BatchCheckLayerAvailability
+                                - ecr:PutImage
+                            Resource:
+                                - !Sub 'arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${ServiceName}'
+                          - Effect: Allow
+                            Action:
+                                - ecs:DescribeServices
+                            Resource:
+                                - !Sub 'arn:aws:ecs:${AWS::Region}:${AWS::AccountId}:task-definition/${ServiceName}:*'
+                          - Effect: Allow
+                            Action:
+                                - ecr:GetAuthorizationToken
+                            Resource: '*'
+
+                          - Effect: Allow
+                            Action:
+                                - iam:PassRole
+                                - iam:GetRole
+                            Resource:
+                                - !Sub 'arn:aws:iam::${AWS::AccountId}:role/${ServiceName}-${Environment}-execution'
+                                - arn:aws:iam::011833101604:role/ecsEventsRole
                           - Effect: Deny
                             Action:
                                 - application-autoscaling:*
@@ -312,10 +293,6 @@ Resources:
                                 ForAllValues:StringNotEqualsIfExists:
                                     aws:CalledVia:
                                         - cloudformation.amazonaws.com
-            ManagedPolicyArns:
-                - !Ref PolicyECS
-                - !Ref PolicyCFN
-                - !Ref PolicyIAM
 
     # The service. The service is a resource which allows you to run multiple
     # copies of a type of task, and gather up their logs and metrics, as well
