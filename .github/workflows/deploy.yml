@@ -42,7 +42,7 @@ jobs:
                   aws-region: ${{ env.AWS_REGION }}
 
             - name: Login to AWS Container Registry
-              uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a    # v2.1.0
+              uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a # v2.1.0
               with:
                   registry: ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com
 
