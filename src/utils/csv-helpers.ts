@@ -3,9 +3,10 @@ import {
     ExportOptionsNames,
     ExportOptionsToUse,
     NonOptionalExportOptionsNames,
+    Task,
 } from '../types'
 
-import type { Section, Task } from '@doist/todoist-api-typescript'
+import type { Section } from '@doist/todoist-api-typescript'
 
 type Props = {
     tasks: Task[]
@@ -27,6 +28,10 @@ function createHeaderRow(exportOptions: ExportOptionsToUse): string {
             items.push(option)
         }
     })
+
+    if (exportOptions.includeCompleted) {
+        items.push('completedDate')
+    }
 
     return items.join(DELIMITER)
 }
@@ -90,6 +95,11 @@ function createTaskRow(
                 break
         }
     })
+
+    if (exportOptions.includeCompleted) {
+        items.push(task.completedAt ?? '')
+    }
+
     return items.join(DELIMITER)
 }
 

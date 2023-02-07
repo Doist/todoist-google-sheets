@@ -45,6 +45,10 @@ export const OPTIONS_HEADER_ID = 'options-header'
 
 const GOOGLE_SIGNIN_IMAGE = '/images/google-signin-{0}.png'
 
+export enum Inputs {
+    IncludeCompleted = 'ToggleInput.IncludeCompleted',
+}
+
 type HomeCardOptions = {
     projectName: string
 }
@@ -83,7 +87,7 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
                 this.createExportOptions(),
 
                 ColumnSet.fromWithColumns({
-                    spacing: 'medium',
+                    spacing: 'large',
                     columns: [
                         Column.fromWithItems({
                             items: [
@@ -310,6 +314,25 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
             this.createTextWithLearnMore({
                 textKey: Sheets.ALWAYS_EXPORTED,
                 learnMoreUrl: Sheets.LEARN_MORE_LINK,
+            }),
+        )
+
+        container.addItem(
+            ToggleInput.from({
+                id: Inputs.IncludeCompleted,
+                title: this.translationService.getTranslation(Sheets.INCLUDE_COMPLETED_TASKS),
+                spacing: 'medium',
+            }),
+        )
+        container.addItem(
+            TextBlock.from({
+                text: this.translationService.getTranslation(
+                    Sheets.INCLUDE_COMPLETED_TASKS_DESCRIPTION,
+                ),
+                isSubtle: true,
+                size: 'small',
+                wrap: true,
+                spacing: 'small',
             }),
         )
 

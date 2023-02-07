@@ -1,3 +1,4 @@
+import { Inputs } from '../services/adaptive-card.service'
 import { ExportOptionsNames, ExportOptionsToUse } from '../types'
 
 import type { DoistCardActionInputs } from '@doist/ui-extensions-core'
@@ -10,6 +11,7 @@ export function getExportOptions(inputs?: DoistCardActionInputs): ExportOptionsT
             const isSelected = inputs[id] === 'true'
             options[option] = isSelected
         })
+        options.includeCompleted = inputs[Inputs.IncludeCompleted] === 'true'
     }
     return options
 }
