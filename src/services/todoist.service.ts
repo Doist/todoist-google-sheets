@@ -63,6 +63,7 @@ export class TodoistService {
     }): Promise<SyncTask[]> {
         const response = await lastValueFrom(
             this.httpService.get<SyncTask[]>(
+                // At time of writing (08/02/2023), this endpoint is undocumented and its stability is not guaranteed.
                 `https://api.todoist.com/sync/v9/items/get_completed?project_id=${projectId}&offset=${offset}&limit=${LIMIT}`,
                 {
                     headers: {
