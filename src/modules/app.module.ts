@@ -10,12 +10,14 @@ import {
     UserDatabaseService as UserDatabaseServiceBase,
 } from '@doist/ui-extensions-server'
 
+import { HttpModule } from '@nestjs/axios'
 import { Module } from '@nestjs/common'
 
 import { Sheets } from '../i18n/en'
 import { ActionsService } from '../services/actions.service'
 import { AdaptiveCardService } from '../services/adaptive-card.service'
 import { GoogleSheetsService } from '../services/google-sheets.service'
+import { TodoistService } from '../services/todoist.service'
 import { UserDatabaseService } from '../services/user-database.service'
 
 import { ConfigurationModule } from './configuration.module'
@@ -23,6 +25,7 @@ import { DatabaseModule } from './database.module'
 
 @Module({
     imports: [
+        HttpModule,
         ConfigurationModule,
         CoreModule,
         DatabaseModule,
@@ -77,6 +80,7 @@ import { DatabaseModule } from './database.module'
         },
         UserDatabaseService,
         ActionsService,
+        TodoistService,
     ],
     controllers: [AppController],
     exports: [

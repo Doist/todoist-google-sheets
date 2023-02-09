@@ -33,6 +33,7 @@ describe('CSV Helpers', () => {
                         section: false,
                         assignee: false,
                         createdDate: false,
+                        includeCompleted: false,
                     },
                 })
                 expect(result).toEqual(toCustomCSV('taskId,taskName,sectionId,parentTaskId'))
@@ -51,11 +52,34 @@ describe('CSV Helpers', () => {
                         section: false,
                         assignee: false,
                         createdDate: false,
+                        includeCompleted: false,
                     },
                 })
 
                 expect(result).toEqual(
                     toCustomCSV('taskId,taskName,sectionId,parentTaskId,completed,due,description'),
+                )
+            })
+
+            it('displays the completedDate header when includeCompleted is true', () => {
+                const result = convertTasksToCsvString({
+                    tasks: [],
+                    sections: [],
+                    exportOptions: {
+                        completed: false,
+                        due: false,
+                        priority: false,
+                        description: false,
+                        parentTask: false,
+                        section: false,
+                        assignee: false,
+                        createdDate: false,
+                        includeCompleted: true,
+                    },
+                })
+
+                expect(result).toEqual(
+                    toCustomCSV('taskId,taskName,sectionId,parentTaskId,completedDate'),
                 )
             })
         })
@@ -64,21 +88,24 @@ describe('CSV Helpers', () => {
             it('displays all data in the row when all options are true', () => {
                 const result = convertTasksToCsvString({
                     tasks: [
-                        buildTask({
-                            overrides: {
-                                content: 'My awesome task',
-                                sectionId: '1234',
-                                due: {
-                                    string: '2022-08-09',
-                                    isRecurring: false,
-                                    date: new Date('2022-08-09').toISOString(),
+                        {
+                            ...buildTask({
+                                overrides: {
+                                    content: 'My awesome task',
+                                    sectionId: '1234',
+                                    due: {
+                                        string: '2022-08-09',
+                                        isRecurring: false,
+                                        date: new Date('2022-08-09').toISOString(),
+                                    },
+                                    priority: 4, // High priority, user will expect 1
+                                    description: 'This is a description',
+                                    createdAt: new Date(2022, 7, 5).toISOString(),
+                                    assigneeId: '12345',
                                 },
-                                priority: 4, // High priority, user will expect 1
-                                description: 'This is a description',
-                                createdAt: new Date(2022, 7, 5).toISOString(),
-                                assigneeId: '12345',
-                            },
-                        }),
+                            }),
+                            completedAt: new Date(2022, 7, 6).toISOString(),
+                        },
                     ],
                     sections: [
                         buildSection({
@@ -88,14 +115,18 @@ describe('CSV Helpers', () => {
                             },
                         }),
                     ],
-                    exportOptions: buildOptions(),
+                    exportOptions: buildOptions({
+                        overrides: {
+                            includeCompleted: true,
+                        },
+                    }),
                 })
 
                 const rows = result.split('\n')
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task,1234,,false,,1,This is a description,,My awesome section,,2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task,1234,,false,,1,This is a description,,My awesome section,,2022-08-05T00:00:00.000Z,2022-08-06T00:00:00.000Z',
                     ),
                 )
             })

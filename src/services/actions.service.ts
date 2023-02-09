@@ -1,5 +1,5 @@
 import { formatString } from '@doist/integrations-common'
-import { Section, Task, TodoistApi } from '@doist/todoist-api-typescript'
+import { Section, TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
     AnalyticsService,
@@ -27,6 +27,7 @@ import { getExportOptions } from '../utils/input-helpers'
 
 import { AdaptiveCardService } from './adaptive-card.service'
 import { GoogleSheetsService } from './google-sheets.service'
+import { TodoistService } from './todoist.service'
 import { UserDatabaseService } from './user-database.service'
 
 import type {
@@ -34,6 +35,7 @@ import type {
     DoistCardResponse,
     TodoistContextMenuData,
 } from '@doist/ui-extensions-core'
+import type { Task } from '../types'
 
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
@@ -44,6 +46,7 @@ export class ActionsService extends ActionsServiceBase {
         private readonly translationService: TranslationService,
         private readonly appTokenService: AppTokenService,
         private readonly analyticsService: AnalyticsService,
+        private readonly todoistService: TodoistService,
     ) {
         super()
     }
@@ -145,6 +148,15 @@ export class ActionsService extends ActionsServiceBase {
 
         try {
             tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
+
+            if (exportOptions.includeCompleted) {
+                tasks = tasks.concat(
+                    await this.todoistService.getCompletedTasks({
+                        token: appToken,
+                        projectId: contextData.sourceId,
+                    }),
+                )
+            }
 
             if (tasks.length === 0) {
                 return {

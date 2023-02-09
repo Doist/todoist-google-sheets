@@ -18,6 +18,8 @@ export enum Sheets {
     SHEET_TITLE = 'Todoist Export: {0} from {1}',
     VIEW_SHEET = 'View sheet',
     ALREADY_AUTHENTICATED = 'Already authenticated',
+    INCLUDE_COMPLETED_TASKS = 'Include all completed tasks.',
+    INCLUDE_COMPLETED_TASKS_DESCRIPTION = 'Depending on project size, this could take a while.',
 }
 
 export enum Options {

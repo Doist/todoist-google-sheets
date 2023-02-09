@@ -72,7 +72,7 @@ You will need to use something like [ngrok](https://ngrok.com/), or [localtunnel
 
 -   Go to https://todoist.com/app_console
 -   Create a new integration
--   Scroll down to the UI Extensions section of that integration and add a new one. This should be of type Context menu. The URL should be a locally running [ngrok](https://ngrok.com/) or [localtunnel](https://www.npmjs.com/package/localtunnel) instance
+-   Scroll down to the UI Extensions section of that integration and add a new one. This should be of type Context menu. The URL should be a locally running [ngrok](https://ngrok.com/) or [localtunnel](https://www.npmjs.com/package/localtunnel) instance (`https://<your ngrok/localtunnel url>/process`).
 -   Select the `data:read` scope and save.
 
 ### Displaying the UI Extension

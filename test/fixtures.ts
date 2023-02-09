@@ -30,6 +30,7 @@ export const buildOptions = build<ExportOptionsToUse>('ExportOptionsToUse', {
         parentTask: true,
         section: true,
         createdDate: true,
+        includeCompleted: false,
     },
 })
 
@@ -46,8 +47,8 @@ export const buildTask = build<Task>('Task', {
         priority: 0,
         projectId: '12345',
         sectionId: '12345',
-        url: '',
         creatorId: '123',
+        url: 'https://todoist.com/showTask?id=12345',
     },
 })
 
