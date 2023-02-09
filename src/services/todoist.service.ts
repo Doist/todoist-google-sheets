@@ -14,7 +14,7 @@ type SyncDue = {
     timezone?: string | null
 }
 
-type SyncTask = {
+export type SyncTask = {
     added_by_uid: string
     assigned_by_uid?: string
     checked: boolean
