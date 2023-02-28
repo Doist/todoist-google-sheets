@@ -1,7 +1,6 @@
 {
     "extends": [
         "github>doist/renovate-config:integrations-base",
-        "github>doist/renovate-config:integrations-automerge",
-        "github>doist/renovate-config-internal:npm-registry-token"
+        "github>doist/renovate-config:integrations-automerge"
     ]
 }
