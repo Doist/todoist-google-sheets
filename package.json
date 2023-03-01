@@ -92,7 +92,7 @@
         "@doist/todoist-api-typescript": "2.1.2",
         "@doist/ui-extensions-core": "4.1.1",
         "@doist/ui-extensions-server": "3.2.1",
-        "@nestjs/axios": "0.1.0",
+        "@nestjs/axios": "0.1.1",
         "@nestjs/common": "9.2.0",
         "@nestjs/config": "2.2.0",
         "@nestjs/core": "9.2.0",
