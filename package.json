@@ -50,7 +50,7 @@
         "@doist/prettier-config": "3.0.5",
         "@doist/tsconfig": "1.0.0",
         "@faker-js/faker": "7.6.0",
-        "@jackfranklin/test-data-bot": "2.0.0",
+        "@jackfranklin/test-data-bot": "2.1.0",
         "@nestjs/cli": "9.1.5",
         "@nestjs/schematics": "9.0.3",
         "@nestjs/testing": "9.2.0",
