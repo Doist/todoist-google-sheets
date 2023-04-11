@@ -106,6 +106,6 @@
         "mysql": "2.18.1",
         "reflect-metadata": "0.1.13",
         "rxjs": "7.5.7",
-        "typeorm": "0.3.12"
+        "typeorm": "0.3.14"
     }
 }
