@@ -77,16 +77,6 @@ Resources:
             AliasTarget:
                 DNSName: integrations-2121385268.us-east-1.elb.amazonaws.com
                 HostedZoneId: Z35SXDOTRQ7X7K
-    # Private zone
-    DNSRecordPrivate:
-        Type: AWS::Route53::RecordSet
-        Properties:
-            Name: !FindInMap [Environments, !Ref 'Environment', Domain]
-            HostedZoneId: Z009017445V77OH1NNM0
-            Type: A
-            AliasTarget:
-                DNSName: integrations-2121385268.us-east-1.elb.amazonaws.com
-                HostedZoneId: Z35SXDOTRQ7X7K
 
     SecurityGroup:
         Type: AWS::EC2::SecurityGroup
