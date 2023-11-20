@@ -25,7 +25,7 @@ export const NonOptionalExportOptionsNames = [
     'parentTaskId',
 ] as const
 
-export type ExportOptions = typeof ExportOptionsNames[number]
+export type ExportOptions = (typeof ExportOptionsNames)[number]
 
 export type ExportOptionsToUse = Record<ExportOptions, boolean> & {
     includeCompleted: boolean
