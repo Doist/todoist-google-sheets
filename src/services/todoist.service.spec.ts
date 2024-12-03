@@ -1,6 +1,5 @@
 import { HttpModule } from '@nestjs/axios'
 import { Test } from '@nestjs/testing'
-import { chunk } from 'lodash'
 import { rest } from 'msw'
 
 import { server } from '../../test/server'
@@ -37,17 +36,18 @@ describe('TodoistService', () => {
         expect(httpServer).toHaveBeenCalledTimes(1)
     })
 
-    test.each([
-        [0, 1],
-        [50, 1],
-        [99, 1],
-        [100, 2],
-        [101, 2],
-        [150, 2],
-        [199, 2],
-        [200, 3],
-    ])('when task count is %i, should call %i times', async (taskCount, expectedCalls) => {
-        setupGetCompletedItems(Array(taskCount).fill({}) as SyncTask[])
+    type TestCase = [number, number, string | undefined]
+    test.each<TestCase>([
+        [0, 1, ''],
+        [50, 1, ''],
+        [99, 1, ''],
+        [100, 1, ''],
+        [101, 1, ''],
+        [150, 1, ''],
+        [199, 1, ''],
+        [200, 2, 'cursor'],
+    ])('when task count is %i, should call %i times', async (taskCount, expectedCalls, cursor) => {
+        setupGetCompletedItems(Array(taskCount).fill({}) as SyncTask[], cursor)
         const target = await getTarget()
         const httpServer = jest.spyOn(target['httpService'], 'get')
 
@@ -58,20 +58,22 @@ describe('TodoistService', () => {
         expect(httpServer).toHaveBeenCalledTimes(expectedCalls)
     })
 
-    function setupGetCompletedItems(items: SyncTask[]) {
-        const allTasks = chunk(items, 100)
-
+    function setupGetCompletedItems(items: SyncTask[], cursor?: string) {
         server.use(
-            rest.get('https://api.todoist.com/sync/v9/items/get_completed', (req, res, ctx) => {
-                const offset = getOffset(req.url)
-                const tasks = allTasks[offset / 100] ?? []
-                return res(ctx.json(tasks))
+            rest.get('https://api.todoist.com/sync/v9/tasks/archived', (req, res, ctx) => {
+                const requestedCursor = getCursor(req.url)
+                return res(
+                    ctx.json({
+                        ...(cursor && !requestedCursor ? { next_cursor: cursor } : {}),
+                        items,
+                    }),
+                )
             }),
         )
     }
 
-    function getOffset(url: URL) {
-        return parseInt(url.searchParams.get('offset') || '0', 10)
+    function getCursor(url: URL) {
+        return url.searchParams.get('cursor')
     }
 
     async function getTarget() {
