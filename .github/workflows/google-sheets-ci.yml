@@ -23,8 +23,8 @@ jobs:
             - name: Configure doist package repository
               uses: actions/setup-node@8c91899e586c5b171469028077307d293428b516 # v3.5.1
               with:
-                node-version-file: '.nvmrc'
-                scope: '@doist'
+                  node-version-file: '.nvmrc'
+                  scope: '@doist'
 
             - name: Bootstrap
               run: npm ci
