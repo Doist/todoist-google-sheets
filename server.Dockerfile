@@ -1,4 +1,4 @@
-FROM node:18-alpine AS BUILD_IMAGE
+FROM node:20-alpine AS BUILD_IMAGE
 
 # https://medium.com/trendyol-tech/how-we-reduce-node-docker-image-size-in-3-steps-ff2762b51d5a
 
@@ -17,7 +17,7 @@ RUN echo "//npm.pkg.github.com/:_authToken=${GH_PACKAGES_TOKEN}" > ~/.npmrc && \
 # Install dependencies for production
 RUN npm ci --omit=dev
 
-FROM node:18-alpine AS RUNTIME
+FROM node:20-alpine AS RUNTIME
 
 # `curl` is used in AWS CloudFormation HealthCheck
 # hadolint ignore=DL3018
