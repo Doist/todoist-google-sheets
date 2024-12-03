@@ -85,7 +85,7 @@ export class TodoistService {
 
         const { items: tasks, next_cursor } = response.data
 
-        if (tasks.length === LIMIT) {
+        if (next_cursor) {
             return tasks.concat(
                 await this.getCompletedTasksInternal({ token, cursor: next_cursor, projectId }),
             )
