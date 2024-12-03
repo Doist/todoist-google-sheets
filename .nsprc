@@ -1,0 +1,27 @@
+{
+    "1097679": {
+        "active": true,
+        "notes": "For this to be resolved, it requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2024/12/31"
+    },
+    "1098583": {
+        "active": true,
+        "notes": "For this to be resolved, it requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2024/12/31"
+    },    
+    "1099520": {
+        "active": true,
+        "notes": "For this to be resolved, it requires dependency updates for @nestjs/core",
+        "expiry": "2024/12/31"
+    },
+    "1099846": {
+        "active": true,
+        "notes": "For this to be resolved, it requires dependency updates for msw",
+        "expiry": "2024/12/31"
+    },
+    "1096693": {
+        "active": true,
+        "notes": "For this to be resolved, it requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2025/01/31"
+    }
+}
