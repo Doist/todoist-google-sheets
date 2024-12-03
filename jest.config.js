@@ -8,4 +8,7 @@ module.exports = {
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     globalSetup: join(__dirname, 'global-setup.js'),
     restoreMocks: true,
+    moduleNameMapper: {
+        '^axios$': 'axios/dist/node/axios.cjs',
+    },
 }
