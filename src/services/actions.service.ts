@@ -1,5 +1,5 @@
 import { formatString } from '@doist/integrations-common'
-import { Section, TodoistApi, User as Collaborator } from '@doist/todoist-api-typescript'
+import { TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
     AnalyticsService,
@@ -35,7 +35,7 @@ import type {
     DoistCardResponse,
     TodoistContextMenuData,
 } from '@doist/ui-extensions-core'
-import type { Task } from '../types'
+import type { ExportOptionsToUse } from '../types'
 
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
@@ -139,50 +139,28 @@ export class ActionsService extends ActionsServiceBase {
         }
 
         const contextData = action.params as TodoistContextMenuData
-        const todoistClient = new TodoistApi(appToken)
 
         const exportOptions = getExportOptions(action.inputs)
 
-        let tasks: Task[] = []
-        let sections: Section[] = []
-        let collaborators: Collaborator[] = []
-
-        // TODO: Parallelize these
-        try {
-            tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
-
-            if (exportOptions.includeCompleted) {
-                tasks = tasks.concat(
-                    await this.todoistService.getCompletedTasks({
-                        token: appToken,
-                        projectId: contextData.sourceId,
-                    }),
-                )
-            }
-
-            if (tasks.length === 0) {
-                return {
-                    card: this.adaptiveCardsService.noTasksCard({
-                        projectName: contextData.content,
-                    }),
-                }
-            }
-
-            // Only fetch sections if we're using them, otherwise it's a wasted call
-            sections = exportOptions['section']
-                ? await todoistClient.getSections(contextData.sourceId)
-                : []
-
-            collaborators = exportOptions['assignee']
-                ? await todoistClient.getProjectCollaborators(contextData.sourceId)
-                : []
-        } catch (error: unknown) {
+        const { tasks, sections, collaborators } = await this.fetchData({
+            appToken,
+            contextData,
+            exportOptions,
+        }).catch((error: unknown) => {
             throw new IntegrationException({
                 error,
                 overrides: {
                     retryAction: action,
                 },
             })
+        })
+
+        if (tasks.length === 0) {
+            return {
+                card: this.adaptiveCardsService.noTasksCard({
+                    projectName: contextData.content,
+                }),
+            }
         }
 
         try {
@@ -225,6 +203,49 @@ export class ActionsService extends ActionsServiceBase {
                     retryAction: action,
                 },
             })
+        }
+    }
+
+    private async fetchData({
+        appToken,
+        contextData,
+        exportOptions,
+    }: {
+        appToken: string
+        contextData: TodoistContextMenuData
+        exportOptions: ExportOptionsToUse
+    }) {
+        const todoistClient = new TodoistApi(appToken)
+
+        const [tasks, completedTasks] = await Promise.all([
+            todoistClient.getTasks({ projectId: contextData.sourceId }),
+            exportOptions.includeCompleted
+                ? this.todoistService.getCompletedTasks({
+                      token: appToken,
+                      projectId: contextData.sourceId,
+                  })
+                : [],
+        ])
+
+        if (tasks.length === 0 && completedTasks.length === 0) {
+            return {
+                tasks: [],
+                sections: [],
+                collaborators: [],
+            }
+        }
+
+        const [sections, collaborators] = await Promise.all([
+            exportOptions['section'] ? todoistClient.getSections(contextData.sourceId) : [],
+            exportOptions['assignee']
+                ? todoistClient.getProjectCollaborators(contextData.sourceId)
+                : [],
+        ])
+
+        return {
+            tasks: [...tasks, ...completedTasks],
+            sections,
+            collaborators,
         }
     }
 
