@@ -1,5 +1,5 @@
 import { formatString } from '@doist/integrations-common'
-import { Section, TodoistApi } from '@doist/todoist-api-typescript'
+import { Section, TodoistApi, User as Collaborator } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
     AnalyticsService,
@@ -145,7 +145,9 @@ export class ActionsService extends ActionsServiceBase {
 
         let tasks: Task[] = []
         let sections: Section[] = []
+        let collaborators: Collaborator[] = []
 
+        // TODO: Parallelize these
         try {
             tasks = await todoistClient.getTasks({ projectId: contextData.sourceId })
 
@@ -170,6 +172,10 @@ export class ActionsService extends ActionsServiceBase {
             sections = exportOptions['section']
                 ? await todoistClient.getSections(contextData.sourceId)
                 : []
+
+            collaborators = exportOptions['assignee']
+                ? await todoistClient.getProjectCollaborators(contextData.sourceId)
+                : []
         } catch (error: unknown) {
             throw new IntegrationException({
                 error,
@@ -183,6 +189,7 @@ export class ActionsService extends ActionsServiceBase {
             const csvData = convertTasksToCsvString({
                 tasks,
                 sections,
+                collaborators,
                 exportOptions,
             })
 

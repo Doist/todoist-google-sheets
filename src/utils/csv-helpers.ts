@@ -6,17 +6,33 @@ import {
     Task,
 } from '../types'
 
-import type { Section } from '@doist/todoist-api-typescript'
+import type { Section, User as Collaborator } from '@doist/todoist-api-typescript'
 
 type Props = {
     tasks: Task[]
     sections: Section[]
+    collaborators: Collaborator[]
     exportOptions: ExportOptionsToUse
 }
 
-export function convertTasksToCsvString({ tasks, sections, exportOptions }: Props): string {
+export function convertTasksToCsvString({
+    tasks,
+    sections,
+    collaborators,
+    exportOptions,
+}: Props): string {
     const rows: string[] = [createHeaderRow(exportOptions)]
-    tasks.forEach((task) => rows.push(createTaskRow(task, exportOptions, tasks, sections)))
+    tasks.forEach((task) =>
+        rows.push(
+            createTaskRow({
+                task,
+                exportOptions,
+                tasks,
+                collaborators,
+                sections,
+            }),
+        ),
+    )
     return rows.join('\n')
 }
 
@@ -36,12 +52,15 @@ function createHeaderRow(exportOptions: ExportOptionsToUse): string {
     return items.join(DELIMITER)
 }
 
-function createTaskRow(
-    task: Task,
-    exportOptions: ExportOptionsToUse,
-    tasks: Task[],
-    sections: Section[],
-): string {
+type CreateTaskRowArgs = {
+    task: Task
+    exportOptions: ExportOptionsToUse
+    tasks: Task[]
+    sections: Section[]
+    collaborators: Collaborator[]
+}
+
+function createTaskRow({ task, exportOptions, tasks, collaborators, sections }: CreateTaskRowArgs) {
     const items: string[] = []
 
     NonOptionalExportOptionsNames.forEach((option) => {
@@ -88,7 +107,9 @@ function createTaskRow(
                 items.push(task.sectionId ? getSectionName(task.sectionId, sections) : '')
                 break
             case 'assignee':
-                items.push(task.assigneeId ?? '')
+                items.push(
+                    task.assigneeId ? getCollaboratorName(task.assigneeId, collaborators) : '',
+                )
                 break
             case 'createdDate':
                 items.push(task.createdAt)
@@ -111,6 +132,13 @@ function getParentTaskName(parentTaskId: string, tasks: Task[]): string {
 function getSectionName(sectionId: string, sections: Section[]): string {
     const section = sections.find((x) => x.id === sectionId)
     return section?.name ? sanitiseText(section.name) : ''
+}
+
+function getCollaboratorName(collaboratorId: string, collaborators: Collaborator[]): string {
+    const collaborator = collaborators.find(({ id }) => id === collaboratorId)
+    const collaboratorName = collaborator?.name ? sanitiseText(collaborator.name) : undefined
+
+    return collaboratorName ? `${collaboratorName} (${collaboratorId})` : collaboratorId
 }
 
 function sanitiseText(description: string): string {

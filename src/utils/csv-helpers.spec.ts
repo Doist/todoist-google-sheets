@@ -1,17 +1,20 @@
-import { buildOptions, buildSection, buildTask } from '../../test/fixtures'
+import { buildCollaborator, buildOptions, buildSection, buildTask } from '../../test/fixtures'
 import { DELIMITER } from '../types'
 
 import { convertTasksToCsvString } from './csv-helpers'
+
+const DEFAULT_ARGS = {
+    tasks: [],
+    sections: [],
+    collaborators: [],
+    exportOptions: buildOptions(),
+}
 
 describe('CSV Helpers', () => {
     describe('convertTasksToCsvString', () => {
         describe('header', () => {
             it('displays all header items when all options are true', () => {
-                const result = convertTasksToCsvString({
-                    tasks: [],
-                    sections: [],
-                    exportOptions: buildOptions(),
-                })
+                const result = convertTasksToCsvString(DEFAULT_ARGS)
 
                 expect(result).toEqual(
                     toCustomCSV(
@@ -22,8 +25,7 @@ describe('CSV Helpers', () => {
 
             it('displays the non-optional headers if all others are turned off', () => {
                 const result = convertTasksToCsvString({
-                    tasks: [],
-                    sections: [],
+                    ...DEFAULT_ARGS,
                     exportOptions: {
                         completed: false,
                         due: false,
@@ -41,8 +43,7 @@ describe('CSV Helpers', () => {
 
             it('displays correct headers when some options are turned off', () => {
                 const result = convertTasksToCsvString({
-                    tasks: [],
-                    sections: [],
+                    ...DEFAULT_ARGS,
                     exportOptions: {
                         completed: true,
                         due: true,
@@ -63,8 +64,7 @@ describe('CSV Helpers', () => {
 
             it('displays the completedDate header when includeCompleted is true', () => {
                 const result = convertTasksToCsvString({
-                    tasks: [],
-                    sections: [],
+                    ...DEFAULT_ARGS,
                     exportOptions: {
                         completed: false,
                         due: false,
@@ -115,6 +115,9 @@ describe('CSV Helpers', () => {
                             },
                         }),
                     ],
+                    collaborators: [
+                        buildCollaborator({ overrides: { id: '12345', name: 'Lukas Frito' } }),
+                    ],
                     exportOptions: buildOptions({
                         overrides: {
                             includeCompleted: true,
@@ -126,7 +129,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task,1234,,false,,1,This is a description,,My awesome section,,2022-08-05T00:00:00.000Z,2022-08-06T00:00:00.000Z',
+                        '10000001,My awesome task,1234,,false,,1,This is a description,,My awesome section,Lukas Frito (12345),2022-08-05T00:00:00.000Z,2022-08-06T00:00:00.000Z',
                     ),
                 )
             })
@@ -152,6 +155,9 @@ describe('CSV Helpers', () => {
                         }),
                     ],
                     sections: [],
+                    collaborators: [
+                        buildCollaborator({ overrides: { id: '12345', name: 'Lukas Frito' } }),
+                    ],
                     exportOptions: buildOptions({
                         overrides: {
                             section: false,
@@ -164,7 +170,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task,1234,,false,,1,,,2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task,1234,,false,,1,,Lukas Frito (12345),2022-08-05T00:00:00.000Z',
                     ),
                 )
             })
@@ -197,6 +203,9 @@ describe('CSV Helpers', () => {
                             },
                         }),
                     ],
+                    collaborators: [
+                        buildCollaborator({ overrides: { id: '12345', name: 'Lukas Frito' } }),
+                    ],
                     exportOptions: buildOptions(),
                 })
 
@@ -204,7 +213,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task On two lines,1234,,false,,3,This is a description Also on two lines,,My awesome section,,2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task On two lines,1234,,false,,3,This is a description Also on two lines,,My awesome section,Lukas Frito (12345),2022-08-05T00:00:00.000Z',
                     ),
                 )
             })
@@ -237,13 +246,16 @@ describe('CSV Helpers', () => {
                             },
                         }),
                     ],
+                    collaborators: [
+                        buildCollaborator({ overrides: { id: '12345', name: 'Lukas Frito' } }),
+                    ],
                     exportOptions: buildOptions(),
                 })
 
                 const rows = result.split('\n')
 
                 expect(rows[1]).toEqual(
-                    '10000001...---...My awesome task, but with a comma...---...1234...---......---...false...---......---...1...---...This is a description Also on two lines...---......---...My awesome section...---......---...2022-08-05T00:00:00.000Z',
+                    '10000001...---...My awesome task, but with a comma...---...1234...---......---...false...---......---...1...---...This is a description Also on two lines...---......---...My awesome section...---...Lukas Frito (12345)...---...2022-08-05T00:00:00.000Z',
                 )
             })
         })
