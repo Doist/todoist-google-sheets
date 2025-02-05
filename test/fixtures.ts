@@ -3,7 +3,7 @@ import { build, perBuild, sequence } from '@jackfranklin/test-data-bot'
 
 import { User } from '../src/entities/user.entity'
 
-import type { Section, Task } from '@doist/todoist-api-typescript'
+import type { Section, Task, User as Collaborator } from '@doist/todoist-api-typescript'
 import type { ExportOptionsToUse } from '../src/types'
 
 export const buildUser = build<User>('User', {
@@ -48,6 +48,7 @@ export const buildTask = build<Task>('Task', {
         projectId: '12345',
         sectionId: '12345',
         creatorId: '123',
+        assigneeId: undefined,
         url: 'https://todoist.com/showTask?id=12345',
     },
 })
@@ -58,5 +59,13 @@ export const buildSection = build<Section>('Section', {
         name: perBuild(() => faker.lorem.sentence()),
         order: 0,
         projectId: '12345',
+    },
+})
+
+export const buildCollaborator = build<Collaborator>('Collaborator', {
+    fields: {
+        id: sequence((num) => String(num + 10000000)),
+        name: perBuild(() => faker.name.fullName()),
+        email: perBuild(() => faker.internet.email()),
     },
 })
