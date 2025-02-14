@@ -4,7 +4,7 @@ import { lastValueFrom } from 'rxjs'
 
 import type { Task } from '../types'
 
-const LIMIT = 100
+const LIMIT = 200
 
 type SyncDue = {
     date: string
@@ -36,6 +36,12 @@ export type SyncTask = {
     due?: SyncDue | null
 }
 
+type CompletedTasksResponse = {
+    items: SyncTask[]
+    total: number
+    next_cursor?: string
+}
+
 @Injectable()
 export class TodoistService {
     constructor(private readonly httpService: HttpService) {}
@@ -47,25 +53,29 @@ export class TodoistService {
         token: string
         projectId: string
     }): Promise<Task[]> {
-        const completedTasks = await this.getCompletedTasksInternal({ token, offset: 0, projectId })
+        const completedTasks = await this.getCompletedTasksInternal({ token, projectId })
 
         return completedTasks.map((task) => this.getTaskFromQuickAddResponse(task))
     }
 
     private async getCompletedTasksInternal({
-        offset,
+        cursor,
         projectId,
         token,
     }: {
         token: string
-        offset: number
+        cursor?: string
         projectId: string
     }): Promise<SyncTask[]> {
         const response = await lastValueFrom(
-            this.httpService.get<SyncTask[]>(
-                // At time of writing (08/02/2023), this endpoint is undocumented and its stability is not guaranteed.
-                `https://api.todoist.com/sync/v9/items/get_completed?project_id=${projectId}&offset=${offset}&limit=${LIMIT}`,
+            this.httpService.get<CompletedTasksResponse>(
+                'https://api.todoist.com/sync/v9/tasks/archived',
                 {
+                    params: {
+                        project_id: projectId,
+                        cursor,
+                        limit: LIMIT,
+                    },
                     headers: {
                         Authorization: `Bearer ${token}`,
                     },
@@ -73,11 +83,11 @@ export class TodoistService {
             ),
         )
 
-        const { data: tasks } = response
+        const { items: tasks, next_cursor } = response.data
 
-        if (tasks.length === LIMIT) {
+        if (next_cursor) {
             return tasks.concat(
-                await this.getCompletedTasksInternal({ token, offset: offset + LIMIT, projectId }),
+                await this.getCompletedTasksInternal({ token, cursor: next_cursor, projectId }),
             )
         }
 
