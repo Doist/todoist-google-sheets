@@ -121,7 +121,7 @@ describe('ActionsService', () => {
             setupGetAppToken('kwijibo')
 
             jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
-                Promise.resolve([]),
+                Promise.resolve({ results: [], nextCursor: null }),
             )
 
             const noTasksCard = jest.spyOn(target['adaptiveCardsService'], 'noTasksCard')
@@ -199,7 +199,7 @@ describe('ActionsService', () => {
 
             const getSections = jest
                 .spyOn(TodoistApi.prototype, 'getSections')
-                .mockImplementation(() => Promise.resolve([]))
+                .mockImplementation(() => Promise.resolve({ results: [], nextCursor: null }))
 
             await target.export({
                 context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },

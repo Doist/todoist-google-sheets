@@ -34,6 +34,11 @@ export type SyncTask = {
     section_id: string
     user_id: string
     due?: SyncDue | null
+
+    // not exportable at the moment
+    // so hardcoding to null
+    deadline: null
+    duration: null
 }
 
 @Injectable()
@@ -47,37 +52,53 @@ export class TodoistService {
         token: string
         projectId: string
     }): Promise<Task[]> {
-        const completedTasks = await this.getCompletedTasksInternal({ token, offset: 0, projectId })
+        const completedTasks = await this.getCompletedTasksInternal({ token, projectId })
 
         return completedTasks.map((task) => this.getTaskFromQuickAddResponse(task))
     }
 
     private async getCompletedTasksInternal({
-        offset,
         projectId,
         token,
+        cursor,
     }: {
         token: string
-        offset: number
         projectId: string
+        cursor?: string
     }): Promise<SyncTask[]> {
         const response = await lastValueFrom(
-            this.httpService.get<SyncTask[]>(
-                // At time of writing (08/02/2023), this endpoint is undocumented and its stability is not guaranteed.
-                `https://api.todoist.com/sync/v9/items/get_completed?project_id=${projectId}&offset=${offset}&limit=${LIMIT}`,
+            this.httpService.get<{
+                has_more: boolean
+                next_cursor?: string
+                items: SyncTask[]
+            }>(
+                // this endpoint is not publicly documented.
+                // we should eventually move to one of the Todoist API v1 endpoints
+                // for fetching completed tasks (e.g `/tasks/completed/by_parent`).
+                // we're only using this endpoint because at the moment (April 2025),
+                // the v1 endpoints do not return data for unjoined projects.
+                'https://api.todoist.com/api/v9.223/archive/items',
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
+                    headers: { Authorization: `Bearer ${token}` },
+                    params: {
+                        limit: LIMIT,
+                        project_id: projectId,
+                        ...(cursor ? { cursor } : {}),
                     },
                 },
             ),
         )
 
-        const { data: tasks } = response
+        const { data } = response
+        const tasks = data.items
 
-        if (tasks.length === LIMIT) {
+        if (data.has_more && data.next_cursor) {
             return tasks.concat(
-                await this.getCompletedTasksInternal({ token, offset: offset + LIMIT, projectId }),
+                await this.getCompletedTasksInternal({
+                    token,
+                    projectId,
+                    cursor: data.next_cursor,
+                }),
             )
         }
 
@@ -85,7 +106,7 @@ export class TodoistService {
     }
 
     private getTaskFromQuickAddResponse(responseData: SyncTask): Task {
-        const due = responseData.due
+        const due: Task['due'] = responseData.due
             ? {
                   isRecurring: responseData.due.is_recurring,
                   string: responseData.due.string,
@@ -95,29 +116,27 @@ export class TodoistService {
                       timezone: responseData.due.timezone,
                   }),
               }
-            : undefined
+            : null
 
-        const task: Task = {
+        return {
             id: responseData.id,
             order: responseData.child_order,
             content: responseData.content,
             description: responseData.description,
             projectId: responseData.project_id,
-            sectionId: responseData.section_id ? responseData.section_id : undefined,
+            sectionId: responseData.section_id,
             isCompleted: responseData.checked,
             labels: responseData.labels,
             priority: responseData.priority,
-            commentCount: 0, // Will always be 0 for a quick add
             createdAt: responseData.added_at,
             creatorId: responseData.added_by_uid,
-            ...(responseData.parent_id !== null && { parentId: responseData.parent_id }),
-            ...(responseData.responsible_uid !== null && {
-                assigneeId: responseData.responsible_uid,
-            }),
+            parentId: responseData.parent_id ?? null,
+            assigneeId: responseData.responsible_uid ?? null,
+            assignerId: responseData.assigned_by_uid ?? null,
             completedAt: responseData.completed_at,
             due,
+            deadline: responseData.deadline,
+            duration: responseData.duration,
         }
-
-        return task
     }
 }

@@ -37,7 +37,6 @@ export const buildOptions = build<ExportOptionsToUse>('ExportOptionsToUse', {
 export const buildTask = build<Task>('Task', {
     fields: {
         id: sequence((num) => String(num + 10000000)),
-        commentCount: 0,
         content: perBuild(() => faker.lorem.sentence()),
         isCompleted: false,
         createdAt: perBuild(() => faker.date.recent().toDateString()),
@@ -48,8 +47,13 @@ export const buildTask = build<Task>('Task', {
         projectId: '12345',
         sectionId: '12345',
         creatorId: '123',
-        assigneeId: undefined,
+        assigneeId: null,
         url: 'https://todoist.com/showTask?id=12345',
+        parentId: null,
+        deadline: null,
+        duration: null,
+        due: null,
+        assignerId: null,
     },
 })
 
@@ -57,8 +61,15 @@ export const buildSection = build<Section>('Section', {
     fields: {
         id: sequence((num) => String(num + 10000000)),
         name: perBuild(() => faker.lorem.sentence()),
-        order: 0,
         projectId: '12345',
+        userId: '123',
+        isDeleted: false,
+        addedAt: perBuild(() => faker.date.recent().toDateString()),
+        updatedAt: perBuild(() => faker.date.recent().toDateString()),
+        isCollapsed: false,
+        isArchived: false,
+        archivedAt: null,
+        sectionOrder: 0,
     },
 })
 

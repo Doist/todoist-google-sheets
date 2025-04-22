@@ -41,11 +41,12 @@ describe('TodoistService', () => {
         [0, 1],
         [50, 1],
         [99, 1],
-        [100, 2],
+        [100, 1],
         [101, 2],
         [150, 2],
         [199, 2],
-        [200, 3],
+        [200, 2],
+        [201, 3],
     ])('when task count is %i, should call %i times', async (taskCount, expectedCalls) => {
         setupGetCompletedItems(Array(taskCount).fill({}) as SyncTask[])
         const target = await getTarget()
@@ -60,18 +61,27 @@ describe('TodoistService', () => {
 
     function setupGetCompletedItems(items: SyncTask[]) {
         const allTasks = chunk(items, 100)
+        const totalPages = allTasks.length
 
         server.use(
-            rest.get('https://api.todoist.com/sync/v9/items/get_completed', (req, res, ctx) => {
-                const offset = getOffset(req.url)
-                const tasks = allTasks[offset / 100] ?? []
-                return res(ctx.json(tasks))
+            rest.get('https://api.todoist.com/api/v9.223/archive/items', (req, res, ctx) => {
+                const cursor = req.url.searchParams.get('cursor')
+                const pageIndex = cursor ? parseInt(cursor, 10) : 0
+                const tasks = allTasks[pageIndex] ?? []
+                const hasMore = pageIndex < totalPages - 1
+                const nextCursor = hasMore ? (pageIndex + 1).toString() : null
+
+                return res(
+                    ctx.json({
+                        total: items.length,
+                        completed_info: [],
+                        has_more: hasMore,
+                        next_cursor: nextCursor,
+                        items: tasks,
+                    }),
+                )
             }),
         )
-    }
-
-    function getOffset(url: URL) {
-        return parseInt(url.searchParams.get('offset') || '0', 10)
     }
 
     async function getTarget() {

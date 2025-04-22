@@ -30,6 +30,7 @@ import { GoogleSheetsService } from './google-sheets.service'
 import { TodoistService } from './todoist.service'
 import { UserDatabaseService } from './user-database.service'
 
+import type { Section, Task, User } from '@doist/todoist-api-typescript'
 import type {
     DoistCardRequest,
     DoistCardResponse,
@@ -206,6 +207,22 @@ export class ActionsService extends ActionsServiceBase {
         }
     }
 
+    private async fetchAllPages<T>(
+        fetchFn: (cursor?: string | null) => Promise<{ results: T[]; nextCursor: string | null }>,
+    ): Promise<T[]> {
+        let allResults: T[] = []
+        let nextCursor: string | null | undefined = undefined
+
+        do {
+            const response: { results: T[]; nextCursor: string | null } = await fetchFn(nextCursor)
+
+            allResults = [...allResults, ...response.results]
+            nextCursor = response.nextCursor
+        } while (nextCursor !== null)
+
+        return allResults
+    }
+
     private async fetchData({
         appToken,
         contextData,
@@ -218,13 +235,18 @@ export class ActionsService extends ActionsServiceBase {
         const todoistClient = new TodoistApi(appToken)
 
         const [tasks, completedTasks] = await Promise.all([
-            todoistClient.getTasks({ projectId: contextData.sourceId }),
+            this.fetchAllPages<Task>((cursor) =>
+                todoistClient.getTasks({
+                    projectId: contextData.sourceId,
+                    ...(cursor ? { cursor } : {}),
+                }),
+            ),
             exportOptions.includeCompleted
                 ? this.todoistService.getCompletedTasks({
                       token: appToken,
                       projectId: contextData.sourceId,
                   })
-                : [],
+                : Promise.resolve([]),
         ])
 
         if (tasks.length === 0 && completedTasks.length === 0) {
@@ -236,10 +258,21 @@ export class ActionsService extends ActionsServiceBase {
         }
 
         const [sections, collaborators] = await Promise.all([
-            exportOptions['section'] ? todoistClient.getSections(contextData.sourceId) : [],
+            exportOptions['section']
+                ? this.fetchAllPages<Section>((cursor) =>
+                      todoistClient.getSections({
+                          projectId: contextData.sourceId,
+                          ...(cursor ? { cursor } : {}),
+                      }),
+                  )
+                : Promise.resolve([]),
             exportOptions['assignee']
-                ? todoistClient.getProjectCollaborators(contextData.sourceId)
-                : [],
+                ? this.fetchAllPages<User>((cursor) =>
+                      todoistClient.getProjectCollaborators(contextData.sourceId, {
+                          ...(cursor ? { cursor } : {}),
+                      }),
+                  )
+                : Promise.resolve([]),
         ])
 
         return {
