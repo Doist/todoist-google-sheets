@@ -36,7 +36,10 @@ describe('export e2e tests', () => {
             results: [],
             nextCursor: null,
         })
-        jest.spyOn(TodoistService.prototype, 'getCompletedTasks').mockResolvedValue([])
+        jest.spyOn(TodoistService.prototype, 'getCompletedTasks').mockResolvedValue({
+            tasks: [],
+            completedInfo: [],
+        })
     })
 
     beforeAll(async () => {

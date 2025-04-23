@@ -33,7 +33,7 @@ describe('TodoistService', () => {
             projectId: '123',
             token: 'kwijibo',
         })
-        expect(result).toEqual([])
+        expect(result).toEqual({ tasks: [], completedInfo: [] })
         expect(httpServer).toHaveBeenCalledTimes(1)
     })
 
