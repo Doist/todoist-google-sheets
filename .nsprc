@@ -1,9 +1,4 @@
 {
-    "1097679": {
-        "active": true,
-        "notes": "For this to be resolved, it requires dependency updates further up the tree (like the @doist packages)",
-        "expiry": "2025/12/31"
-    },
     "1099520": {
         "active": true,
         "notes": "For this to be resolved, it requires dependency updates for @nestjs/core",
@@ -12,6 +7,16 @@
     "1101844": {
         "active": true,
         "notes": "For this to be resolved, it requires dependency updates for @nestjs/core",
+        "expiry": "2025/12/31"
+    },
+    "1104001": {
+        "active": true,
+        "notes": "For this to be resolved, it requires dependency updates for @doist/ui-extensions-server",
+        "expiry": "2025/12/31"
+    },
+    "1103903": {
+        "active": true,
+        "notes": "For this to be resolved, it requires dependency updates for @doist/ui-extensions-server",
         "expiry": "2025/12/31"
     }
 }
