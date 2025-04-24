@@ -25,6 +25,6 @@ export function setupGetAppToken(token: string | never) {
 
 export function setupGetTasks() {
     jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
-        Promise.resolve([buildTask()]),
+        Promise.resolve({ results: [buildTask()], nextCursor: null }),
     )
 }

@@ -1,5 +1,4 @@
 import { formatString } from '@doist/integrations-common'
-import { TodoistApi } from '@doist/todoist-api-typescript'
 import {
     ActionsService as ActionsServiceBase,
     AnalyticsService,
@@ -27,15 +26,16 @@ import { getExportOptions } from '../utils/input-helpers'
 
 import { AdaptiveCardService } from './adaptive-card.service'
 import { GoogleSheetsService } from './google-sheets.service'
-import { TodoistService } from './todoist.service'
+import { CompletedInfo, TodoistService } from './todoist.service'
 import { UserDatabaseService } from './user-database.service'
 
+import type { Section } from '@doist/todoist-api-typescript'
 import type {
     DoistCardRequest,
     DoistCardResponse,
     TodoistContextMenuData,
 } from '@doist/ui-extensions-core'
-import type { ExportOptionsToUse } from '../types'
+import type { ExportOptionsToUse, Task } from '../types'
 
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
@@ -215,38 +215,201 @@ export class ActionsService extends ActionsServiceBase {
         contextData: TodoistContextMenuData
         exportOptions: ExportOptionsToUse
     }) {
-        const todoistClient = new TodoistApi(appToken)
-
-        const [tasks, completedTasks] = await Promise.all([
-            todoistClient.getTasks({ projectId: contextData.sourceId }),
-            exportOptions.includeCompleted
-                ? this.todoistService.getCompletedTasks({
+        const [tasks, sections, collaborators] = await Promise.all([
+            this.todoistService.getProjectTasks({
+                token: appToken,
+                projectId: contextData.sourceId,
+            }),
+            exportOptions['section']
+                ? this.todoistService.getProjectSections({
                       token: appToken,
                       projectId: contextData.sourceId,
                   })
-                : [],
-        ])
-
-        if (tasks.length === 0 && completedTasks.length === 0) {
-            return {
-                tasks: [],
-                sections: [],
-                collaborators: [],
-            }
-        }
-
-        const [sections, collaborators] = await Promise.all([
-            exportOptions['section'] ? todoistClient.getSections(contextData.sourceId) : [],
+                : Promise.resolve([]),
             exportOptions['assignee']
-                ? todoistClient.getProjectCollaborators(contextData.sourceId)
-                : [],
+                ? this.todoistService.getProjectCollaborators({
+                      token: appToken,
+                      projectId: contextData.sourceId,
+                  })
+                : Promise.resolve([]),
         ])
+
+        let completedTasks: Task[] = []
+        if (exportOptions.includeCompleted) {
+            const syncCompletedInfo = await this.todoistService.getCompletedInfo({
+                token: appToken,
+            })
+
+            completedTasks = await this.fetchCompletedTasksForProject({
+                appToken,
+                projectId: contextData.sourceId,
+                tasks,
+                sections,
+                syncCompletedInfo,
+            })
+        }
 
         return {
             tasks: [...tasks, ...completedTasks],
             sections,
             collaborators,
         }
+    }
+
+    private async fetchCompletedTasksForProject(params: {
+        appToken: string
+        projectId: string
+        tasks: Task[]
+        sections: Section[]
+        syncCompletedInfo: CompletedInfo[]
+    }): Promise<Task[]> {
+        const { appToken, projectId, tasks, sections, syncCompletedInfo } = params
+
+        const taskIdsWithCompletedSubtasks = this.findTaskIdsWithCompletedSubtasks(
+            syncCompletedInfo,
+            tasks,
+        )
+        const sectionIdsWithCompletedTasks = this.findSectionIdsWithCompletedTasks(
+            syncCompletedInfo,
+            sections,
+        )
+
+        const [projectCompletdTasks, taskCompletedTasks, sectionCompletedTasks] = await Promise.all(
+            [
+                this.fetchCompletedTasksForProjectId(appToken, projectId),
+                this.fetchCompletedTasksForTaskIds(appToken, taskIdsWithCompletedSubtasks),
+                this.fetchCompletedTasksForSectionIds(appToken, sectionIdsWithCompletedTasks),
+            ],
+        )
+
+        let allCompletedInfo = [
+            ...projectCompletdTasks.completedInfo,
+            ...taskCompletedTasks.completedInfo,
+            ...sectionCompletedTasks.completedInfo,
+        ]
+        let allCompletedTasks = [
+            ...projectCompletdTasks.tasks,
+            ...taskCompletedTasks.tasks,
+            ...sectionCompletedTasks.tasks,
+        ]
+
+        let completedTasksIdsWithCompletedSubtasks = this.findTaskIdsWithCompletedSubtasks(
+            allCompletedInfo,
+            allCompletedTasks,
+        )
+
+        // completed tasks can have completed subtasks, so we need to loop
+        // until no more completed subtasks are found
+        while (completedTasksIdsWithCompletedSubtasks.size > 0) {
+            const subtaskResult = await this.fetchCompletedTasksForTaskIds(
+                appToken,
+                completedTasksIdsWithCompletedSubtasks,
+            )
+
+            allCompletedTasks = [...allCompletedTasks, ...subtaskResult.tasks]
+            allCompletedInfo = [...allCompletedInfo, ...subtaskResult.completedInfo]
+
+            completedTasksIdsWithCompletedSubtasks = this.findTaskIdsWithCompletedSubtasks(
+                allCompletedInfo,
+                subtaskResult.tasks,
+            )
+        }
+
+        return allCompletedTasks
+    }
+
+    private async fetchCompletedTasksForProjectId(
+        appToken: string,
+        projectId: string,
+    ): Promise<{ tasks: Task[]; completedInfo: CompletedInfo[] }> {
+        try {
+            return await this.todoistService.getCompletedTasks({
+                token: appToken,
+                projectId,
+            })
+        } catch (error: unknown) {
+            return { tasks: [], completedInfo: [] }
+        }
+    }
+
+    private async fetchCompletedTasksForTaskIds(
+        appToken: string,
+        taskIds: Set<string>,
+    ): Promise<{ tasks: Task[]; completedInfo: CompletedInfo[] }> {
+        if (taskIds.size === 0) {
+            return { tasks: [], completedInfo: [] }
+        }
+
+        const fetchPromises = Array.from(taskIds).map((taskId) =>
+            this.todoistService.getCompletedTasks({
+                token: appToken,
+                taskId,
+            }),
+        )
+
+        const results = await Promise.all(fetchPromises)
+
+        const tasks = results.flatMap((result) => result.tasks)
+        const completedInfo = results.flatMap((result) => result.completedInfo)
+
+        return { tasks, completedInfo }
+    }
+
+    private async fetchCompletedTasksForSectionIds(
+        appToken: string,
+        sectionIds: Set<string>,
+    ): Promise<{ tasks: Task[]; completedInfo: CompletedInfo[] }> {
+        if (sectionIds.size === 0) {
+            return { tasks: [], completedInfo: [] }
+        }
+
+        const fetchPromises = Array.from(sectionIds).map((sectionId) =>
+            this.todoistService.getCompletedTasks({
+                token: appToken,
+                sectionId,
+            }),
+        )
+
+        const results = await Promise.all(fetchPromises)
+
+        const tasks = results.flatMap((result) => result.tasks)
+        const completedInfo = results.flatMap((result) => result.completedInfo)
+
+        return { tasks, completedInfo }
+    }
+
+    private findTaskIdsWithCompletedSubtasks(
+        completedInfo: CompletedInfo[],
+        tasks: Task[],
+    ): Set<string> {
+        const taskIds = new Set<string>()
+        const activeTaskIds = new Set(tasks.map((task) => task.id))
+
+        // Find tasks that have completed subtasks and are in our active tasks list
+        completedInfo.forEach((info) => {
+            if (info.item_id && activeTaskIds.has(info.item_id)) {
+                taskIds.add(info.item_id)
+            }
+        })
+
+        return taskIds
+    }
+
+    private findSectionIdsWithCompletedTasks(
+        completedInfo: CompletedInfo[],
+        sections: Section[],
+    ): Set<string> {
+        const sectionIds = new Set<string>()
+        const activeSectionIds = new Set(sections.map((section) => section.id))
+
+        // Find sections that have completed tasks and are in our active sections list
+        completedInfo.forEach((info) => {
+            if (info.section_id && activeSectionIds.has(info.section_id)) {
+                sectionIds.add(info.section_id)
+            }
+        })
+
+        return sectionIds
     }
 
     private createSheetName(projectName: string): string {

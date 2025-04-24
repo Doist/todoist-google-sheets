@@ -129,7 +129,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task,1234,,false,,1,This is a description,,My awesome section,Lukas Frito (12345),2022-08-05T00:00:00.000Z,2022-08-06T00:00:00.000Z',
+                        '10000001,My awesome task,1234,,false,2022-08-09,1,This is a description,,My awesome section,Lukas Frito (12345),2022-08-05T00:00:00.000Z,2022-08-06T00:00:00.000Z',
                     ),
                 )
             })
@@ -170,7 +170,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task,1234,,false,,1,,Lukas Frito (12345),2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task,1234,,false,2022-08-09,1,,Lukas Frito (12345),2022-08-05T00:00:00.000Z',
                     ),
                 )
             })
@@ -213,7 +213,7 @@ describe('CSV Helpers', () => {
 
                 expect(rows[1]).toEqual(
                     toCustomCSV(
-                        '10000001,My awesome task On two lines,1234,,false,,3,This is a description Also on two lines,,My awesome section,Lukas Frito (12345),2022-08-05T00:00:00.000Z',
+                        '10000001,My awesome task On two lines,1234,,false,2022-08-09,3,This is a description Also on two lines,,My awesome section,Lukas Frito (12345),2022-08-05T00:00:00.000Z',
                     ),
                 )
             })
@@ -255,7 +255,7 @@ describe('CSV Helpers', () => {
                 const rows = result.split('\n')
 
                 expect(rows[1]).toEqual(
-                    '10000001...---...My awesome task, but with a comma...---...1234...---......---...false...---......---...1...---...This is a description Also on two lines...---......---...My awesome section...---...Lukas Frito (12345)...---...2022-08-05T00:00:00.000Z',
+                    '10000001...---...My awesome task, but with a comma...---...1234...---......---...false...---...2022-08-09...---...1...---...This is a description Also on two lines...---......---...My awesome section...---...Lukas Frito (12345)...---...2022-08-05T00:00:00.000Z',
                 )
             })
         })

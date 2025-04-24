@@ -5,8 +5,9 @@ import request from 'supertest'
 
 import { CardActions as SheetCardActions } from '../../src/constants/card-actions'
 import { GoogleSheetsService } from '../../src/services/google-sheets.service'
+import { TodoistService } from '../../src/services/todoist.service'
 import { buildUser } from '../fixtures'
-import { setupGetGoogleToken, setupGetUser } from '../setups'
+import { setupGetGoogleToken, setupGetTasks, setupGetUser } from '../setups'
 
 import { createTestApp } from './helpers'
 
@@ -18,6 +19,29 @@ describe('export e2e tests', () => {
 
     afterAll(() => app.close())
 
+    beforeEach(() => {
+        jest.spyOn(TodoistApi.prototype, 'getTasks').mockResolvedValue({
+            results: [],
+            nextCursor: null,
+        })
+        jest.spyOn(TodoistApi.prototype, 'getSections').mockResolvedValue({
+            results: [],
+            nextCursor: null,
+        })
+        jest.spyOn(TodoistApi.prototype, 'getProjectCollaborators').mockResolvedValue({
+            results: [],
+            nextCursor: null,
+        })
+        jest.spyOn(TodoistApi.prototype, 'getProjectCollaborators').mockResolvedValue({
+            results: [],
+            nextCursor: null,
+        })
+        jest.spyOn(TodoistService.prototype, 'getCompletedTasks').mockResolvedValue({
+            tasks: [],
+            completedInfo: [],
+        })
+    })
+
     beforeAll(async () => {
         const { appModule } = await createTestApp()
         app = appModule
@@ -27,7 +51,10 @@ describe('export e2e tests', () => {
         setupGetUser(buildUser())
         setupGetGoogleToken('token')
 
-        jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() => Promise.resolve([]))
+        jest.spyOn(TodoistApi.prototype, 'getTasks').mockResolvedValue({
+            results: [],
+            nextCursor: null,
+        })
 
         return request(app.getHttpServer())
             .post('/process')
@@ -135,6 +162,7 @@ describe('export e2e tests', () => {
     it('returns the error card if talking to Google fails', () => {
         setupGetUser(buildUser())
         setupGetGoogleToken('token')
+        setupGetTasks()
 
         jest.spyOn(GoogleSheetsService.prototype, 'exportToSheets').mockImplementation(() => {
             throw new Error('Generic error talking to Google')
