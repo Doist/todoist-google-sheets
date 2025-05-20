@@ -16,6 +16,7 @@ export const ExportOptionsNames = [
     'section',
     'assignee',
     'createdDate',
+    'labels',
 ] as const
 
 export const NonOptionalExportOptionsNames = [

@@ -31,6 +31,7 @@ export const buildOptions = build<ExportOptionsToUse>('ExportOptionsToUse', {
         section: true,
         createdDate: true,
         includeCompleted: false,
+        labels: true,
     },
 })
 
