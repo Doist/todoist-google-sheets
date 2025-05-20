@@ -114,6 +114,9 @@ function createTaskRow({ task, exportOptions, tasks, collaborators, sections }: 
             case 'createdDate':
                 items.push(task.createdAt)
                 break
+            case 'labels':
+                items.push(task.labels.join('; '))
+                break
         }
     })
 

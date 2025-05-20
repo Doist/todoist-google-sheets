@@ -31,4 +31,5 @@ export enum Options {
     SECTION = 'Section',
     ASSIGNEE = 'Assignee',
     CREATED_DATE = 'Created date',
+    LABELS = 'Labels',
 }

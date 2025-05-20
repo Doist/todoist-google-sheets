@@ -31,7 +31,6 @@ import {
 } from '@doist/ui-extensions-server'
 
 import { Injectable } from '@nestjs/common'
-import { chunk } from 'lodash'
 
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
 import { Options, Sheets } from '../i18n/en'
@@ -66,6 +65,7 @@ const optionsTranslationKeys: OptionsKeys = {
     priority: Options.PRIORITY,
     parentTask: Options.PARENT_TASK,
     section: Options.SECTION,
+    labels: Options.LABELS,
 }
 
 @Injectable()
@@ -297,13 +297,15 @@ export class AdaptiveCardService extends AdaptiveCardServiceBase {
             }),
         )
 
-        const [leftColumnItems, rightColumnItems] = chunk(
-            toggleSwitches,
-            (toggleSwitches.length / 2) | 0,
-        )
+        // Calculate the midpoint
+        const midIndex = Math.ceil(toggleSwitches.length / 2)
 
-        leftColumnItems?.forEach((item) => leftColumn.addItem(item))
-        rightColumnItems?.forEach((item) => rightColumn.addItem(item))
+        // Split into two approximately equal parts
+        const leftColumnItems = toggleSwitches.slice(0, midIndex)
+        const rightColumnItems = toggleSwitches.slice(midIndex)
+
+        leftColumnItems.forEach((item) => leftColumn.addItem(item))
+        rightColumnItems.forEach((item) => rightColumn.addItem(item))
 
         columns.addColumn(leftColumn)
         columns.addColumn(rightColumn)
