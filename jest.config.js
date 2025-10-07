@@ -7,6 +7,7 @@ module.exports = {
     testRegex: '(/__tests__/.*|(\\.|/)(test|spec|e2e-spec))\\.tsx?$',
     moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
     globalSetup: join(__dirname, 'global-setup.js'),
+    setupFilesAfterEnv: [join(__dirname, 'jest.setup.js')],
     restoreMocks: true,
     moduleNameMapper: {
         '^axios$': 'axios/dist/node/axios.cjs',
