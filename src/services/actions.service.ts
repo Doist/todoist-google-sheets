@@ -62,7 +62,7 @@ export class ActionsService extends ActionsServiceBase {
             : this.getHomeCard(request)
     }
 
-    private getAuthentication(
+    private async getAuthentication(
         request: DoistCardRequest,
         isInitialLaunch = false,
     ): Promise<DoistCardResponse> {
@@ -75,7 +75,9 @@ export class ActionsService extends ActionsServiceBase {
                 loginTitle: Sheets.LOGIN_TITLE,
                 loginInstructions: Sheets.LOGIN_INSTRUCTIONS,
                 learnMoreLink: Sheets.LEARN_MORE_LINK,
-                authUrl: this.googleSheetsService.getAuthorizationUrl(request.context.user.id),
+                authUrl: await this.googleSheetsService.getAuthorizationUrl(
+                    request.context.user.id,
+                ),
             },
             extensionType: request.extensionType,
         })
