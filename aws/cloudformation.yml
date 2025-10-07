@@ -153,6 +153,8 @@ Resources:
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:DB_ENCRYPTION_ALGORITHM::'
                       - Name: DB_ENCRYPTION_IV_LENGTH
                         ValueFrom: 'arn:aws:secretsmanager:us-east-1:011833101604:secret:integrations/todoist-google-sheets/secrets-4oa5bD:DB_ENCRYPTION_IV_LENGTH::'
+                      - Name: OAUTH_STATE_KEY
+                        ValueFrom: !Ref OauthSecret
                   Ulimits:
                       - Name: nofile
                         HardLimit: 5000
@@ -192,6 +194,7 @@ Resources:
                             Resource:
                                 - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:integrations/${ServiceName}/secrets-4oa5bD'
                                 - !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:integrations/${ServiceName}/mysql-woNqVM'
+                                - !Ref OauthSecret
 
     GitHubRoleCI:
         Type: AWS::IAM::Role
@@ -344,3 +347,11 @@ Resources:
                   Values:
                       - !FindInMap [Environments, !Ref 'Environment', Domain]
             ListenerArn: !FindInMap [Environments, !Ref 'Environment', ListenerArn]
+
+    OauthSecret:
+        Type: AWS::SecretsManager::Secret
+        Properties:
+            Name: !Sub '${AWS::StackName}-oauth-state-key'
+            GenerateSecretString:
+                ExcludePunctuation: true
+                PasswordLength: 20
