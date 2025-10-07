@@ -52,10 +52,11 @@ export class GoogleSheetsService extends AuthenticationClient {
         return Boolean(user?.authToken)
     }
 
-    getAuthorizationUrl(userId: number): string {
+    async getAuthorizationUrl(userId: number): Promise<string> {
+        const state = await this.stateService.createState(userId)
         return this.oauthClient.generateAuthUrl({
             scope: scopes,
-            state: this.stateService.createState(userId),
+            state: state,
             access_type: 'offline',
             prompt: 'consent',
         })
