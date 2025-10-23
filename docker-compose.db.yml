@@ -11,3 +11,15 @@ services:
             MYSQL_ROOT_PASSWORD: devRootPassword
             MYSQL_USER: gsheets_admin
             MYSQL_PASSWORD: gsheetsAdminPassword
+
+    database-test:
+        image: mysql:8.0
+        command: --default-authentication-plugin=mysql_native_password
+        restart: always
+        ports:
+            - '15306:3306'
+        environment:
+            MYSQL_DATABASE: e2e-tests
+            MYSQL_ROOT_PASSWORD: devRootPassword
+            MYSQL_USER: gsheets_admin
+            MYSQL_PASSWORD: gsheetsAdminPassword

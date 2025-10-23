@@ -12,4 +12,6 @@ module.exports = {
     moduleNameMapper: {
         '^axios$': 'axios/dist/node/axios.cjs',
     },
+    // Run e2e tests sequentially to avoid database conflicts
+    maxWorkers: 1,
 }
