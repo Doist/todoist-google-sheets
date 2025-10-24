@@ -53,24 +53,99 @@ export class GoogleSheetsService extends AuthenticationClient {
     }
 
     async getAuthorizationUrl(userId: number): Promise<string> {
-        // Fetch the user's externalUserId to bind it to the state for CSRF protection
-        const user = await this.dbService.getUser(userId)
-        const externalUserId = user?.externalUserId
-        const state = await this.stateService.createState(userId, externalUserId)
-        return this.oauthClient.generateAuthUrl({
-            scope: scopes,
-            state: state,
-            access_type: 'offline',
-            prompt: 'consent',
-        })
+        // eslint-disable-next-line no-console
+        console.log(
+            `[AUTH] ${new Date().toISOString()} - getAuthorizationUrl: Generating authorization URL for user ID: ${userId}`,
+        )
+
+        try {
+            // Fetch the user's externalUserId to bind it to the state for CSRF protection
+            const user = await this.dbService.getUser(userId)
+            const externalUserId = user?.externalUserId
+
+            // eslint-disable-next-line no-console
+            console.log(
+                `[AUTH] ${new Date().toISOString()} - getAuthorizationUrl: User lookup complete`,
+                {
+                    userId,
+                    hasExistingUser: Boolean(user),
+                    hasExternalUserId: Boolean(externalUserId),
+                },
+            )
+
+            const state = await this.stateService.createState(userId, externalUserId)
+            const authUrl = this.oauthClient.generateAuthUrl({
+                scope: scopes,
+                state: state,
+                access_type: 'offline',
+                prompt: 'consent',
+            })
+
+            // eslint-disable-next-line no-console
+            console.log(
+                `[AUTH] ${new Date().toISOString()} - getAuthorizationUrl: Authorization URL generated successfully`,
+                {
+                    userId,
+                    stateLength: state.length,
+                },
+            )
+
+            return authUrl
+        } catch (error: unknown) {
+            // eslint-disable-next-line no-console
+            console.error(
+                `[AUTH] ${new Date().toISOString()} - getAuthorizationUrl: Failed to generate authorization URL`,
+                {
+                    userId,
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    errorName: error instanceof Error ? error.constructor.name : typeof error,
+                    errorStack: error instanceof Error ? error.stack : undefined,
+                },
+            )
+            throw error
+        }
     }
 
     override async exchangeToken(code: string): Promise<AccessTokenData> {
-        const { tokens } = await this.oauthClient.getToken(code)
-        return {
-            accessToken: tokens.access_token ?? '',
-            expiresAt: this.getExpirationDate(tokens),
-            refreshToken: tokens.refresh_token ?? '',
+        // eslint-disable-next-line no-console
+        console.log(
+            `[AUTH] ${new Date().toISOString()} - exchangeToken: Starting token exchange, code length: ${
+                code.length
+            }`,
+        )
+
+        try {
+            const { tokens } = await this.oauthClient.getToken(code)
+
+            // eslint-disable-next-line no-console
+            console.log(
+                `[AUTH] ${new Date().toISOString()} - exchangeToken: Token exchange successful`,
+                {
+                    hasAccessToken: Boolean(tokens.access_token),
+                    hasRefreshToken: Boolean(tokens.refresh_token),
+                    tokenType: tokens.token_type,
+                    expiresIn: tokens.expiry_date
+                        ? new Date(tokens.expiry_date).toISOString()
+                        : 'none',
+                },
+            )
+
+            return {
+                accessToken: tokens.access_token ?? '',
+                expiresAt: this.getExpirationDate(tokens),
+                refreshToken: tokens.refresh_token ?? '',
+            }
+        } catch (error: unknown) {
+            // eslint-disable-next-line no-console
+            console.error(
+                `[AUTH] ${new Date().toISOString()} - exchangeToken: Token exchange failed`,
+                {
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    errorName: error instanceof Error ? error.constructor.name : typeof error,
+                    errorStack: error instanceof Error ? error.stack : undefined,
+                },
+            )
+            throw error
         }
     }
 
@@ -100,13 +175,45 @@ export class GoogleSheetsService extends AuthenticationClient {
     }
 
     async hasValidToken(token: string): Promise<boolean> {
-        const url = new URL(TOKEN_INFO)
-        url.searchParams.append('access_token', token)
+        // eslint-disable-next-line no-console
+        console.log(
+            `[AUTH] ${new Date().toISOString()} - hasValidToken: Validating token, token length: ${
+                token.length
+            }`,
+        )
 
-        const response = await lastValueFrom(this.httpService.get<TokenInfo>(url.toString()))
-        const { scope } = response.data
+        try {
+            const url = new URL(TOKEN_INFO)
+            url.searchParams.append('access_token', token)
 
-        return scopes.every((tokenScope) => scope.includes(tokenScope))
+            const response = await lastValueFrom(this.httpService.get<TokenInfo>(url.toString()))
+            const { scope } = response.data
+
+            const isValid = scopes.every((tokenScope) => scope.includes(tokenScope))
+
+            // eslint-disable-next-line no-console
+            console.log(
+                `[AUTH] ${new Date().toISOString()} - hasValidToken: Token validation complete`,
+                {
+                    isValid,
+                    scopesPresent: scopes.filter((s) => scope.includes(s)),
+                    scopesMissing: scopes.filter((s) => !scope.includes(s)),
+                },
+            )
+
+            return isValid
+        } catch (error: unknown) {
+            // eslint-disable-next-line no-console
+            console.error(
+                `[AUTH] ${new Date().toISOString()} - hasValidToken: Token validation failed`,
+                {
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    errorName: error instanceof Error ? error.constructor.name : typeof error,
+                    errorStack: error instanceof Error ? error.stack : undefined,
+                },
+            )
+            throw error
+        }
     }
 
     async revokeToken(token: string): Promise<void> {
@@ -114,20 +221,59 @@ export class GoogleSheetsService extends AuthenticationClient {
     }
 
     async getAuthenticatedUser(authToken: string): Promise<AuthenticatedUser> {
-        const client = new oauth2_v2.Oauth2({ auth: authToken })
-        const { data } = await client.userinfo.get({
-            key: getConfiguration().googleApiKey,
-            oauth_token: authToken,
-        })
+        // eslint-disable-next-line no-console
+        console.log(
+            `[AUTH] ${new Date().toISOString()} - getAuthenticatedUser: Fetching user info from Google, token length: ${
+                authToken.length
+            }`,
+        )
 
-        if (!data.email || !data.id || !data.name) {
-            throw new Error('Missing user data')
-        }
+        try {
+            const client = new oauth2_v2.Oauth2({ auth: authToken })
+            const { data } = await client.userinfo.get({
+                key: getConfiguration().googleApiKey,
+                oauth_token: authToken,
+            })
 
-        return {
-            email: data.email,
-            id: data.id,
-            name: data.name,
+            if (!data.email || !data.id || !data.name) {
+                // eslint-disable-next-line no-console
+                console.error(
+                    `[AUTH] ${new Date().toISOString()} - getAuthenticatedUser: Missing required user data`,
+                    {
+                        hasEmail: Boolean(data.email),
+                        hasId: Boolean(data.id),
+                        hasName: Boolean(data.name),
+                    },
+                )
+                throw new Error('Missing user data')
+            }
+
+            // eslint-disable-next-line no-console
+            console.log(
+                `[AUTH] ${new Date().toISOString()} - getAuthenticatedUser: Successfully retrieved user info`,
+                {
+                    userId: data.id,
+                    email: data.email,
+                    hasName: Boolean(data.name),
+                },
+            )
+
+            return {
+                email: data.email,
+                id: data.id,
+                name: data.name,
+            }
+        } catch (error: unknown) {
+            // eslint-disable-next-line no-console
+            console.error(
+                `[AUTH] ${new Date().toISOString()} - getAuthenticatedUser: Failed to fetch user info`,
+                {
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                    errorName: error instanceof Error ? error.constructor.name : typeof error,
+                    errorStack: error instanceof Error ? error.stack : undefined,
+                },
+            )
+            throw error
         }
     }
 
