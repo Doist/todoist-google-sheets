@@ -91,7 +91,7 @@
         "@doist/integrations-common": "2.0.0",
         "@doist/todoist-api-typescript": "4.0.4",
         "@doist/ui-extensions-core": "4.1.1",
-        "@doist/ui-extensions-server": "3.5.1",
+        "@doist/ui-extensions-server": "3.5.2",
         "@nestjs/axios": "3.1.2",
         "@nestjs/common": "10.4.16",
         "@nestjs/config": "3.3.0",
