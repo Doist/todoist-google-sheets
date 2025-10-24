@@ -53,10 +53,7 @@ export class GoogleSheetsService extends AuthenticationClient {
     }
 
     async getAuthorizationUrl(userId: number): Promise<string> {
-        // Fetch the user's externalUserId to bind it to the state for CSRF protection
-        const user = await this.dbService.getUser(userId)
-        const externalUserId = user?.externalUserId
-        const state = await this.stateService.createState(userId, externalUserId)
+        const state = await this.stateService.createState(userId)
         return this.oauthClient.generateAuthUrl({
             scope: scopes,
             state: state,
