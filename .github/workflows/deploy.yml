@@ -7,7 +7,7 @@ concurrency:
 on:
     push:
         branches:
-            - "main"
+            - 'main'
     workflow_dispatch:
 
 permissions:
@@ -18,7 +18,7 @@ env:
     INTEGRATION: todoist-google-sheets
     ENV: production
     AWS_REGION: us-east-1
-    AWS_ROLE: "arn:aws:iam::011833101604:role/todoist-google-sheets-production-GitHubRoleCI-HWJ5P5W2PLOB"
+    AWS_ROLE: 'arn:aws:iam::011833101604:role/todoist-google-sheets-production-GitHubRoleCI-HWJ5P5W2PLOB'
 
 jobs:
     build:
