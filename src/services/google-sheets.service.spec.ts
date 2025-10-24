@@ -31,7 +31,6 @@ describe('GoogleSheetsService', () => {
 
     describe('getAuthorizationUrl', () => {
         it('returns the correct url', async () => {
-            jest.spyOn(target['dbService'], 'getUser').mockResolvedValue(undefined)
             jest.spyOn(target['stateService'], 'createState').mockResolvedValue('state')
 
             expect(await target.getAuthorizationUrl(1)).toEqual(
