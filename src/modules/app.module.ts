@@ -57,7 +57,6 @@ import { DatabaseModule } from './database.module'
                 },
             ],
             exports: [GoogleSheetsService],
-            debug: true,
         }),
         ErrorModule.forRoot({
             errorCardOptions: {
