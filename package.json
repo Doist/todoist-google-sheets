@@ -54,7 +54,7 @@
         "@nestjs/cli": "10.4.8",
         "@nestjs/schematics": "10.2.3",
         "@nestjs/testing": "10.4.12",
-        "@types/express": "4.17.17",
+        "@types/express": "4.17.25",
         "@types/jest": "27.5.2",
         "@types/lodash": "4.17.13",
         "@types/node": "18.15.0",
