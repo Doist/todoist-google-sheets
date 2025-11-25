@@ -25,7 +25,10 @@ import { DatabaseModule } from './database.module'
 
 @Module({
     imports: [
-        HttpModule,
+        HttpModule.register({
+            // Add 30 second timeout to allow for requests with many completed tasks.
+            timeout: 30000,
+        }),
         ConfigurationModule,
         CoreModule,
         DatabaseModule,
