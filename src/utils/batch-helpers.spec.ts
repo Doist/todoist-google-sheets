@@ -44,11 +44,11 @@ describe('batchExecute', () => {
 
     it('should handle errors in individual promises', async () => {
         const items = [1, 2, 3]
-        const fn = jest.fn(async (item: number) => {
+        const fn = jest.fn((item: number) => {
             if (item === 2) {
-                throw new Error('Test error')
+                return Promise.reject(new Error('Test error'))
             }
-            return item * 2
+            return Promise.resolve(item * 2)
         })
 
         await expect(batchExecute(items, fn, 2)).rejects.toThrow('Test error')
