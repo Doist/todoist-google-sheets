@@ -33,5 +33,34 @@
         "active": true,
         "notes": "glob CLI command injection vulnerability - from typeorm dependency",
         "expiry": "2025/12/31"
+    },
+    "1111034": {
+        "active": true,
+        "notes": "axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL",
+        "expiry": "2025/12/31"
+    },
+    "1111035": {
+        "active": true,
+        "notes": "axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL",
+        "expiry": "2025/12/31"
+    },
+    "1110996": {
+        "active": true,
+        "notes": "Node-forge has ASN.1 Unbounded Recursion",
+        "expiry": "2025/12/31"
+    },
+    "1110997": {
+        "active": true,
+        "notes": "Node-forge has ASN.1 Unbounded Recursion",
+        "expiry": "2025/12/31"
+    },
+    "1110998": {
+        "active": true,
+        "notes": "Node-forge is vulnerable to ASN.1 OID Integer Truncation",
+        "expiry": "2025/12/31"
+    },
+    "1110999": {
+        "active": true,
+        "notes": "node-forge has an Interpretation Conflict vulnerability via its ASN.1 Validator Desynchronization"
     }
 }
