@@ -38,11 +38,6 @@ import type {
 } from '@doist/ui-extensions-core'
 import type { ExportOptionsToUse, Task } from '../types'
 
-// Maximum depth for recursive subtask fetching to prevent infinite loops
-// and excessive API calls. With 5 levels, we can handle deeply nested subtasks
-// while avoiding timeouts on projects with ~1800+ completed tasks.
-const MAX_SUBTASK_DEPTH = 5
-
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
     constructor(
@@ -308,9 +303,7 @@ export class ActionsService extends ActionsServiceBase {
 
         // completed tasks can have completed subtasks, so we need to loop
         // until no more completed subtasks are found
-        // Limit depth to prevent excessive API calls with deeply nested tasks
-        let depth = 0
-        while (completedTasksIdsWithCompletedSubtasks.size > 0 && depth < MAX_SUBTASK_DEPTH) {
+        while (completedTasksIdsWithCompletedSubtasks.size > 0) {
             const subtaskResult = await this.fetchCompletedTasksForTaskIds(
                 appToken,
                 completedTasksIdsWithCompletedSubtasks,
@@ -323,7 +316,6 @@ export class ActionsService extends ActionsServiceBase {
                 allCompletedInfo,
                 subtaskResult.tasks,
             )
-            depth++
         }
 
         return allCompletedTasks
