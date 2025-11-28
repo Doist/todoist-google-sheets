@@ -1,17 +1,66 @@
 {
     "1097679": {
         "active": true,
-        "notes": "For this to be resolved, it requires dependency updates further up the tree (like the @doist packages)",
+        "notes": "Axios CSRF vulnerability - requires dependency updates further up the tree (like the @doist packages)",
         "expiry": "2025/12/31"
     },
-    "1099520": {
+    "1103617": {
         "active": true,
-        "notes": "For this to be resolved, it requires dependency updates for @nestjs/core",
+        "notes": "Axios SSRF and credential leakage vulnerability - requires dependency updates further up the tree (like the @doist packages)",
         "expiry": "2025/12/31"
     },
-    "1101844": {
+    "1103618": {
         "active": true,
-        "notes": "For this to be resolved, it requires dependency updates for @nestjs/core",
+        "notes": "Axios SSRF and credential leakage vulnerability - requires dependency updates further up the tree (like the @doist packages)",
         "expiry": "2025/12/31"
+    },
+    "1108262": {
+        "active": true,
+        "notes": "Axios DoS vulnerability through lack of data size check - requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2025/12/31"
+    },
+    "1108263": {
+        "active": true,
+        "notes": "Axios DoS vulnerability through lack of data size check - requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2025/12/31"
+    },
+    "1110858": {
+        "active": true,
+        "notes": "body-parser DoS vulnerability with URL encoding - requires dependency updates",
+        "expiry": "2025/12/31"
+    },
+    "1109842": {
+        "active": true,
+        "notes": "glob CLI command injection vulnerability - from typeorm dependency",
+        "expiry": "2025/12/31"
+    },
+    "1111034": {
+        "active": true,
+        "notes": "axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL",
+        "expiry": "2025/12/31"
+    },
+    "1111035": {
+        "active": true,
+        "notes": "axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL",
+        "expiry": "2025/12/31"
+    },
+    "1110996": {
+        "active": true,
+        "notes": "Node-forge has ASN.1 Unbounded Recursion",
+        "expiry": "2025/12/31"
+    },
+    "1110997": {
+        "active": true,
+        "notes": "Node-forge has ASN.1 Unbounded Recursion",
+        "expiry": "2025/12/31"
+    },
+    "1110998": {
+        "active": true,
+        "notes": "Node-forge is vulnerable to ASN.1 OID Integer Truncation",
+        "expiry": "2025/12/31"
+    },
+    "1110999": {
+        "active": true,
+        "notes": "node-forge has an Interpretation Conflict vulnerability via its ASN.1 Validator Desynchronization"
     }
 }

@@ -21,6 +21,7 @@ import { BadRequestException, Injectable } from '@nestjs/common'
 import { exportEvent } from '../analytics/events'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
 import { Sheets } from '../i18n/en'
+import { batchExecute } from '../utils/batch-helpers'
 import { convertTasksToCsvString } from '../utils/csv-helpers'
 import { getExportOptions } from '../utils/input-helpers'
 
@@ -342,14 +343,17 @@ export class ActionsService extends ActionsServiceBase {
             return { tasks: [], completedInfo: [] }
         }
 
-        const fetchPromises = Array.from(taskIds).map((taskId) =>
-            this.todoistService.getCompletedTasks({
-                token: appToken,
-                taskId,
-            }),
+        // Use batched execution to limit concurrent API calls to 10 at a time
+        // This prevents overwhelming the API when there are many tasks with completed subtasks
+        const results = await batchExecute(
+            Array.from(taskIds),
+            (taskId) =>
+                this.todoistService.getCompletedTasks({
+                    token: appToken,
+                    taskId,
+                }),
+            10, // Max 10 concurrent requests
         )
-
-        const results = await Promise.all(fetchPromises)
 
         const tasks = results.flatMap((result) => result.tasks)
         const completedInfo = results.flatMap((result) => result.completedInfo)
@@ -365,14 +369,17 @@ export class ActionsService extends ActionsServiceBase {
             return { tasks: [], completedInfo: [] }
         }
 
-        const fetchPromises = Array.from(sectionIds).map((sectionId) =>
-            this.todoistService.getCompletedTasks({
-                token: appToken,
-                sectionId,
-            }),
+        // Use batched execution to limit concurrent API calls to 10 at a time
+        // This prevents overwhelming the API when there are many sections with completed tasks
+        const results = await batchExecute(
+            Array.from(sectionIds),
+            (sectionId) =>
+                this.todoistService.getCompletedTasks({
+                    token: appToken,
+                    sectionId,
+                }),
+            10, // Max 10 concurrent requests
         )
-
-        const results = await Promise.all(fetchPromises)
 
         const tasks = results.flatMap((result) => result.tasks)
         const completedInfo = results.flatMap((result) => result.completedInfo)
