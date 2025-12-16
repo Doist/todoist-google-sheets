@@ -53,14 +53,18 @@ For more information, visit https://typeorm.io/#/migrations
 3. Once created, select that app, then click on `Enable APIs and Services`
 4. Search for "Sheets" then click on the Google Sheets API result, then Enable it
 5. Go back to the [dashboard](https://console.cloud.google.com/apis/dashboard) and click on `OAuth consent screen` down the left hand side
-6. Choose `External`, then click `Create`.
-7. Fill in the app details, if running locally, provide your ngrok link in the authorized domains, click `Save and continue`
-8. Click `Add or remove scopes`, the scopes you need are `/auth/userinfo.profile`, `/auth/userinfo.email`, and `auth/spreadsheets`. Click `Save and continue`
-9. Click `Add Users` and add your email address (and any others that may need access). Click `Save and Continue`, then `Back to dashboard`
-10. On the left hand menu, click `Credentials`
-11. Click `Create Credentials`, then API Key, copy the value provided and put it in your .env file
-12. Click `Create Credentials` again, then click `OAuth Client Id`.
-13. Application type should be "Web application", then fill in the remaining details. _Authorized redirect URIs_ to be `[BASE_URL from .env file]/auth`. Click `Create`
+6. Click on `Clients`, down the left hand side then `Create client`.
+7. Application type should be "Web application", then fill in the remaining details. _Authorized redirect URIs_ to be `[BASE_URL from .env file]/auth`. Click `Create`
+    - If running locally, provide your ngrok link in the authorized domains, click `Save and continue`
+8. Once having created the client, click into it via the `Clients` menu down the left hand side
+9. Under `Additional Information`, copy the `Client ID` and put it in your .env file
+10. Click on `Add secret`, copy the generated API key, and add to your .env file
+11. Click on `Data Access` down the left hand side
+12. Click `Add or remove scopes`, the scopes you need are `/auth/userinfo.profile`, `/auth/userinfo.email`, and `auth/spreadsheets`. Click `Save and continue`
+13. Click `Audience` down the left hand side then `Add users`
+14. Add your email address (and any others that may need access). Click `Save`, then `Back to dashboard`
+
+
 
 Note _Client ID_ and _Client Secret_ add them to `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
