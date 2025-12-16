@@ -61,6 +61,17 @@
     },
     "1110999": {
         "active": true,
-        "notes": "node-forge has an Interpretation Conflict vulnerability via its ASN.1 Validator Desynchronization"
+        "notes": "node-forge has an Interpretation Conflict vulnerability via its ASN.1 Validator Desynchronization",
+        "expiry": "2025/12/31"
+    },
+    "1111068": {
+        "active": true,
+        "notes": "node-forge ASN.1 OID Integer Truncation - requires dependency updates",
+        "expiry": "2025/12/31"
+    },
+    "1111243": {
+        "active": true,
+        "notes": "jws HMAC Signature verification issue - requires dependency updates",
+        "expiry": "2025/12/31"
     }
 }
