@@ -98,7 +98,7 @@
         "@nestjs/core": "10.4.20",
         "@nestjs/platform-express": "10.4.20",
         "@nestjs/typeorm": "10.0.2",
-        "axios": "1.7.4",
+        "axios": "1.12.0",
         "dayjs": "1.11.19",
         "env-cmd": "10.1.0",
         "googleapis": "109.0.1",
