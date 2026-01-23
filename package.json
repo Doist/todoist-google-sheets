@@ -47,7 +47,7 @@
     },
     "devDependencies": {
         "@doist/eslint-config": "8.1.4",
-        "@doist/prettier-config": "3.0.5",
+        "@doist/prettier-config": "4.0.1",
         "@doist/tsconfig": "1.0.0",
         "@faker-js/faker": "7.6.0",
         "@jackfranklin/test-data-bot": "2.1.0",
