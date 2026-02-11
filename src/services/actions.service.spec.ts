@@ -273,10 +273,6 @@ describe('ActionsService', () => {
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
                 .mockImplementation(() => Promise.resolve({ tasks: [], completedInfo: [] }))
 
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([]),
-            )
-
             await target.export({
                 context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
                 action: {
@@ -315,9 +311,6 @@ describe('ActionsService', () => {
             jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
                 Promise.resolve({ results: [parentTask], nextCursor: null }),
             )
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([{ item_id: 'parent1', completed_items: 2 }]),
-            )
 
             const completedSubtasks = [
                 {
@@ -338,7 +331,15 @@ describe('ActionsService', () => {
 
             const getCompletedTasks = jest
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(({ taskId }) => {
+                .mockImplementation(({ projectId, taskId }) => {
+                    if (projectId === '1234') {
+                        // Project-level call returns completedInfo indicating
+                        // which tasks have completed subtasks
+                        return Promise.resolve({
+                            tasks: [],
+                            completedInfo: [{ item_id: 'parent1', completed_items: 2 }],
+                        })
+                    }
                     if (taskId === 'parent1') {
                         return Promise.resolve({
                             tasks: completedSubtasks,
@@ -405,10 +406,6 @@ describe('ActionsService', () => {
                 Promise.resolve({ results: sections, nextCursor: null }),
             )
 
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([{ section_id: 'section1', completed_items: 1 }]),
-            )
-
             const completedTask = {
                 id: 'task1',
                 projectId: '1234',
@@ -419,7 +416,15 @@ describe('ActionsService', () => {
 
             const getCompletedTasks = jest
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(({ sectionId }) => {
+                .mockImplementation(({ projectId, sectionId }) => {
+                    if (projectId === '1234') {
+                        // Project-level call returns completedInfo indicating
+                        // which sections have completed tasks
+                        return Promise.resolve({
+                            tasks: [],
+                            completedInfo: [{ section_id: 'section1', completed_items: 1 }],
+                        })
+                    }
                     if (sectionId === 'section1') {
                         return Promise.resolve({
                             tasks: [completedTask],
@@ -475,10 +480,6 @@ describe('ActionsService', () => {
                 Promise.resolve({ results: [parentTask], nextCursor: null }),
             )
 
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([{ item_id: 'parent1', completed_items: 2 }]),
-            )
-
             const completedSubtasks = [
                 {
                     id: 'sub1',
@@ -501,7 +502,15 @@ describe('ActionsService', () => {
 
             const getCompletedTasks = jest
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(({ taskId }) => {
+                .mockImplementation(({ projectId, taskId }) => {
+                    if (projectId === '1234') {
+                        // Project-level call returns completedInfo indicating
+                        // which tasks have completed subtasks
+                        return Promise.resolve({
+                            tasks: [],
+                            completedInfo: [{ item_id: 'parent1', completed_items: 2 }],
+                        })
+                    }
                     if (taskId === 'parent1') {
                         return Promise.resolve({
                             tasks: completedSubtasks,

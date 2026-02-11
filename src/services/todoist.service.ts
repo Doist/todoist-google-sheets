@@ -164,12 +164,7 @@ export class TodoistService {
         }> => {
             const response = await lastValueFrom(
                 this.httpService.get<CompletedTasksResponse>(
-                    // this endpoint is not publicly documented.
-                    // we should eventually move to one of the Todoist API v1 endpoints
-                    // for fetching completed tasks (e.g `/tasks/completed/by_parent`).
-                    // we're only using this endpoint because at the moment (April 2025),
-                    // the v1 endpoints do not return data for unjoined projects.
-                    'https://api.todoist.com/api/v9.223/archive/items',
+                    'https://api.todoist.com/api/v2/archive/items',
                     {
                         headers: { Authorization: `Bearer ${token}` },
                         params: {
@@ -208,18 +203,6 @@ export class TodoistService {
             items: allItems,
             completedInfo: allCompletedInfo,
         }
-    }
-
-    async getCompletedInfo({ token }: { token: string }): Promise<CompletedInfo[]> {
-        const response = await lastValueFrom(
-            this.httpService.post<{ completed_info: CompletedInfo[] }>(
-                'https://api.todoist.com/api/v9.223/sync',
-                { resource_types: ['completed_info'] },
-                { headers: { Authorization: `Bearer ${token}` } },
-            ),
-        )
-
-        return response.data.completed_info
     }
 
     private getTaskFromQuickAddResponse(responseData: SyncTask): Task {

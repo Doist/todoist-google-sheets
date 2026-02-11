@@ -27,7 +27,7 @@ import { getExportOptions } from '../utils/input-helpers'
 
 import { AdaptiveCardService } from './adaptive-card.service'
 import { GoogleSheetsService } from './google-sheets.service'
-import { CompletedInfo, TodoistService } from './todoist.service'
+import { type CompletedInfo, TodoistService } from './todoist.service'
 import { UserDatabaseService } from './user-database.service'
 
 import type { Section } from '@doist/todoist-api-typescript'
@@ -239,16 +239,11 @@ export class ActionsService extends ActionsServiceBase {
 
         let completedTasks: Task[] = []
         if (exportOptions.includeCompleted) {
-            const syncCompletedInfo = await this.todoistService.getCompletedInfo({
-                token: appToken,
-            })
-
             completedTasks = await this.fetchCompletedTasksForProject({
                 appToken,
                 projectId: contextData.sourceId,
                 tasks,
                 sections,
-                syncCompletedInfo,
             })
         }
 
@@ -264,34 +259,40 @@ export class ActionsService extends ActionsServiceBase {
         projectId: string
         tasks: Task[]
         sections: Section[]
-        syncCompletedInfo: CompletedInfo[]
     }): Promise<Task[]> {
-        const { appToken, projectId, tasks, sections, syncCompletedInfo } = params
+        const { appToken, projectId, tasks, sections } = params
+
+        // Fetch completed tasks at the project level first.
+        // The archive/items response includes completed_info, which tells us
+        // which tasks and sections have completed children. This replaces
+        // the previous getCompletedInfo call that used the now-deprecated
+        // v9 sync endpoint.
+        const projectCompletedTasks = await this.fetchCompletedTasksForProjectId(
+            appToken,
+            projectId,
+        )
 
         const taskIdsWithCompletedSubtasks = this.findTaskIdsWithCompletedSubtasks(
-            syncCompletedInfo,
+            projectCompletedTasks.completedInfo,
             tasks,
         )
         const sectionIdsWithCompletedTasks = this.findSectionIdsWithCompletedTasks(
-            syncCompletedInfo,
+            projectCompletedTasks.completedInfo,
             sections,
         )
 
-        const [projectCompletdTasks, taskCompletedTasks, sectionCompletedTasks] = await Promise.all(
-            [
-                this.fetchCompletedTasksForProjectId(appToken, projectId),
-                this.fetchCompletedTasksForTaskIds(appToken, taskIdsWithCompletedSubtasks),
-                this.fetchCompletedTasksForSectionIds(appToken, sectionIdsWithCompletedTasks),
-            ],
-        )
+        const [taskCompletedTasks, sectionCompletedTasks] = await Promise.all([
+            this.fetchCompletedTasksForTaskIds(appToken, taskIdsWithCompletedSubtasks),
+            this.fetchCompletedTasksForSectionIds(appToken, sectionIdsWithCompletedTasks),
+        ])
 
         let allCompletedInfo = [
-            ...projectCompletdTasks.completedInfo,
+            ...projectCompletedTasks.completedInfo,
             ...taskCompletedTasks.completedInfo,
             ...sectionCompletedTasks.completedInfo,
         ]
         let allCompletedTasks = [
-            ...projectCompletdTasks.tasks,
+            ...projectCompletedTasks.tasks,
             ...taskCompletedTasks.tasks,
             ...sectionCompletedTasks.tasks,
         ]

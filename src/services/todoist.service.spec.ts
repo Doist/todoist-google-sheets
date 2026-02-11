@@ -64,7 +64,7 @@ describe('TodoistService', () => {
         const totalPages = allTasks.length
 
         server.use(
-            rest.get('https://api.todoist.com/api/v9.223/archive/items', (req, res, ctx) => {
+            rest.get('https://api.todoist.com/api/v2/archive/items', (req, res, ctx) => {
                 const cursor = req.url.searchParams.get('cursor')
                 const pageIndex = cursor ? parseInt(cursor, 10) : 0
                 const tasks = allTasks[pageIndex] ?? []
