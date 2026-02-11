@@ -64,8 +64,6 @@ For more information, visit https://typeorm.io/#/migrations
 13. Click `Audience` down the left hand side then `Add users`
 14. Add your email address (and any others that may need access). Click `Save`, then `Back to dashboard`
 
-
-
 Note _Client ID_ and _Client Secret_ add them to `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
 ## Accessing your extension

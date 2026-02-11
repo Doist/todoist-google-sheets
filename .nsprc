@@ -2,76 +2,81 @@
     "1097679": {
         "active": true,
         "notes": "Axios CSRF vulnerability - requires dependency updates further up the tree (like the @doist packages)",
-        "expiry": "2025/12/31"
-    },
-    "1103617": {
-        "active": true,
-        "notes": "Axios SSRF and credential leakage vulnerability - requires dependency updates further up the tree (like the @doist packages)",
-        "expiry": "2025/12/31"
-    },
-    "1103618": {
-        "active": true,
-        "notes": "Axios SSRF and credential leakage vulnerability - requires dependency updates further up the tree (like the @doist packages)",
-        "expiry": "2025/12/31"
-    },
-    "1108262": {
-        "active": true,
-        "notes": "Axios DoS vulnerability through lack of data size check - requires dependency updates further up the tree (like the @doist packages)",
-        "expiry": "2025/12/31"
-    },
-    "1108263": {
-        "active": true,
-        "notes": "Axios DoS vulnerability through lack of data size check - requires dependency updates further up the tree (like the @doist packages)",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1110858": {
         "active": true,
         "notes": "body-parser DoS vulnerability with URL encoding - requires dependency updates",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1109842": {
         "active": true,
         "notes": "glob CLI command injection vulnerability - from typeorm dependency",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1111034": {
         "active": true,
         "notes": "axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1111035": {
         "active": true,
         "notes": "axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1110996": {
         "active": true,
         "notes": "Node-forge has ASN.1 Unbounded Recursion",
-        "expiry": "2025/12/31"
-    },
-    "1110997": {
-        "active": true,
-        "notes": "Node-forge has ASN.1 Unbounded Recursion",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1110998": {
         "active": true,
         "notes": "Node-forge is vulnerable to ASN.1 OID Integer Truncation",
-        "expiry": "2025/12/31"
-    },
-    "1110999": {
-        "active": true,
-        "notes": "node-forge has an Interpretation Conflict vulnerability via its ASN.1 Validator Desynchronization",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1111068": {
         "active": true,
         "notes": "node-forge ASN.1 OID Integer Truncation - requires dependency updates",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
     },
     "1111243": {
         "active": true,
         "notes": "jws HMAC Signature verification issue - requires dependency updates",
-        "expiry": "2025/12/31"
+        "expiry": "2026/06/30"
+    },
+    "1112195": {
+        "active": true,
+        "notes": "Axios is vulnerable to DoS attack through lack of data size check - requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2026/06/30"
+    },
+    "1113092": {
+        "active": true,
+        "notes": "Axios is Vulnerable to Denial of Service via __proto__ Key in mergeConfig - requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2026/06/30"
+    },
+    "1112704": {
+        "active": true,
+        "notes": "jsdiff has a Denial of Service vulnerability in parsePatch and applyPatch",
+        "expiry": "2026/06/30"
+    },
+    "1112455": {
+        "active": true,
+        "notes": "Lodash has Prototype Pollution Vulnerability in _.unset and _.omit functions - requires dependency updates",
+        "expiry": "2026/06/30"
+    },
+    "1113132": {
+        "active": true,
+        "notes": "qs arrayLimit bypass in bracket notation allows DoS via memory exhaustion - requires dependency updates",
+        "expiry": "2026/06/30"
+    },
+    "1112714": {
+        "active": true,
+        "notes": "js-yaml has prototype pollution in merge (<<) - requires dependency updates",
+        "expiry": "2026/06/30"
+    },
+    "1112715": {
+        "active": true,
+        "notes": "js-yaml has prototype pollution in merge (<<) - requires dependency updates",
+        "expiry": "2026/06/30"
     }
 }
