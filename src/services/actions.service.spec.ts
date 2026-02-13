@@ -269,9 +269,13 @@ describe('ActionsService', () => {
                 Promise.resolve(undefined),
             )
 
+            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
+                Promise.resolve([]),
+            )
+
             const getCompletedItems = jest
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(() => Promise.resolve({ tasks: [], completedInfo: [] }))
+                .mockImplementation(() => Promise.resolve([]))
 
             await target.export({
                 context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
@@ -312,6 +316,11 @@ describe('ActionsService', () => {
                 Promise.resolve({ results: [parentTask], nextCursor: null }),
             )
 
+            // completed_info from sync API tells us parent1 has completed subtasks
+            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
+                Promise.resolve([{ item_id: 'parent1', completed_items: 2 }]),
+            )
+
             const completedSubtasks = [
                 {
                     id: 'sub1',
@@ -333,23 +342,12 @@ describe('ActionsService', () => {
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
                 .mockImplementation(({ projectId, taskId }) => {
                     if (projectId === '1234') {
-                        // Project-level call returns completedInfo indicating
-                        // which tasks have completed subtasks
-                        return Promise.resolve({
-                            tasks: [],
-                            completedInfo: [{ item_id: 'parent1', completed_items: 2 }],
-                        })
+                        return Promise.resolve([])
                     }
                     if (taskId === 'parent1') {
-                        return Promise.resolve({
-                            tasks: completedSubtasks,
-                            completedInfo: [
-                                { item_id: 'sub1', completed_items: 0 },
-                                { item_id: 'sub2', completed_items: 0 },
-                            ],
-                        })
+                        return Promise.resolve(completedSubtasks)
                     }
-                    return Promise.resolve({ tasks: [], completedInfo: [] })
+                    return Promise.resolve([])
                 })
 
             jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
@@ -406,6 +404,11 @@ describe('ActionsService', () => {
                 Promise.resolve({ results: sections, nextCursor: null }),
             )
 
+            // completed_info from sync API tells us section1 has completed tasks
+            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
+                Promise.resolve([{ section_id: 'section1', completed_items: 1 }]),
+            )
+
             const completedTask = {
                 id: 'task1',
                 projectId: '1234',
@@ -418,20 +421,12 @@ describe('ActionsService', () => {
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
                 .mockImplementation(({ projectId, sectionId }) => {
                     if (projectId === '1234') {
-                        // Project-level call returns completedInfo indicating
-                        // which sections have completed tasks
-                        return Promise.resolve({
-                            tasks: [],
-                            completedInfo: [{ section_id: 'section1', completed_items: 1 }],
-                        })
+                        return Promise.resolve([])
                     }
                     if (sectionId === 'section1') {
-                        return Promise.resolve({
-                            tasks: [completedTask],
-                            completedInfo: [{ item_id: 'task1', completed_items: 0 }],
-                        })
+                        return Promise.resolve([completedTask])
                     }
-                    return Promise.resolve({ tasks: [], completedInfo: [] })
+                    return Promise.resolve([])
                 })
 
             jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
@@ -480,6 +475,15 @@ describe('ActionsService', () => {
                 Promise.resolve({ results: [parentTask], nextCursor: null }),
             )
 
+            // completed_info from sync API tells us about the full hierarchy:
+            // parent1 has completed subtasks, and sub1 also has completed subtasks
+            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
+                Promise.resolve([
+                    { item_id: 'parent1', completed_items: 2 },
+                    { item_id: 'sub1', completed_items: 1 },
+                ]),
+            )
+
             const completedSubtasks = [
                 {
                     id: 'sub1',
@@ -504,26 +508,15 @@ describe('ActionsService', () => {
                 .spyOn(TodoistService.prototype, 'getCompletedTasks')
                 .mockImplementation(({ projectId, taskId }) => {
                     if (projectId === '1234') {
-                        // Project-level call returns completedInfo indicating
-                        // which tasks have completed subtasks
-                        return Promise.resolve({
-                            tasks: [],
-                            completedInfo: [{ item_id: 'parent1', completed_items: 2 }],
-                        })
+                        return Promise.resolve([])
                     }
                     if (taskId === 'parent1') {
-                        return Promise.resolve({
-                            tasks: completedSubtasks,
-                            completedInfo: [{ item_id: 'sub1', completed_items: 1 }],
-                        })
+                        return Promise.resolve(completedSubtasks)
                     }
                     if (taskId === 'sub1') {
-                        return Promise.resolve({
-                            tasks: completedSubSubtasks,
-                            completedInfo: [],
-                        })
+                        return Promise.resolve(completedSubSubtasks)
                     }
-                    return Promise.resolve({ tasks: [], completedInfo: [] })
+                    return Promise.resolve([])
                 })
 
             jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
