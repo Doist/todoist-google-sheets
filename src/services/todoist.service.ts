@@ -8,6 +8,13 @@ import type { Task } from '../types'
 
 const LIMIT = 100
 
+/**
+ * A date predating Todoist's existence (founded 2007), used as the `since`
+ * parameter when fetching completed tasks from the v1 API to ensure all
+ * historical completed tasks are included.
+ */
+const COMPLETED_TASKS_SINCE = '2006-01-01T00:00:00Z'
+
 type SyncDue = {
     date: string
     is_recurring: boolean
@@ -51,8 +58,6 @@ export type CompletedInfo = {
 }
 
 type CompletedTasksResponse = {
-    total: number
-    completed_info: CompletedInfo[]
     has_more: boolean
     next_cursor: string | null
     items: SyncTask[]
@@ -123,24 +128,56 @@ export class TodoistService {
         projectId?: string
         taskId?: string
         sectionId?: string
-    }): Promise<{ tasks: Task[]; completedInfo: CompletedInfo[] }> {
+    }): Promise<Task[]> {
         try {
-            const result = await this.getCompletedTasksInternal({
+            const items = await this.getCompletedTasksInternal({
                 token,
                 projectId,
                 taskId,
                 sectionId,
             })
 
-            return {
-                tasks: result.items.map((task) => this.getTaskFromQuickAddResponse(task)),
-                completedInfo: result.completedInfo,
-            }
+            return items.map((task) => this.getTaskFromQuickAddResponse(task))
         } catch (error: unknown) {
-            return { tasks: [], completedInfo: [] }
+            return []
         }
     }
 
+    /**
+     * Fetches completed_info from the Todoist Sync API (v1).
+     *
+     * completed_info indicates the number of completed items within each
+     * active project, section, or parent item. This is used to determine
+     * which tasks and sections have completed children that need to be
+     * fetched separately.
+     *
+     * @see https://developer.todoist.com/api/v1/#tag/Sync/Overview/Read-resources
+     */
+    async getCompletedInfo({ token }: { token: string }): Promise<CompletedInfo[]> {
+        try {
+            const response = await lastValueFrom(
+                this.httpService.post<{ completed_info: CompletedInfo[] }>(
+                    'https://api.todoist.com/api/v1/sync',
+                    { sync_token: '*', resource_types: '["completed_info"]' },
+                    { headers: { Authorization: `Bearer ${token}` } },
+                ),
+            )
+
+            return response.data.completed_info
+        } catch (error: unknown) {
+            return []
+        }
+    }
+
+    /**
+     * Fetches completed tasks using the documented Todoist API v1 endpoint.
+     *
+     * Uses a wide date range (since 2006) to fetch all completed tasks,
+     * effectively replicating the behavior of the previous undocumented
+     * archive/items endpoint.
+     *
+     * @see https://developer.todoist.com/api/v1/#tag/Tasks/operation/getTasks_Completed_By_Completion_Date
+     */
     private async getCompletedTasksInternal({
         projectId,
         token,
@@ -151,24 +188,25 @@ export class TodoistService {
         projectId?: string
         taskId?: string
         sectionId?: string
-    }): Promise<{ items: SyncTask[]; completedInfo: CompletedInfo[] }> {
+    }): Promise<SyncTask[]> {
         const allItems: SyncTask[] = []
-        const allCompletedInfo: CompletedInfo[] = []
+        const until = new Date().toISOString()
 
         const fetchPage = async (
             cursor?: string | null,
         ): Promise<{
             results: SyncTask[]
             nextCursor: string | null
-            completedInfo: CompletedInfo[]
         }> => {
             const response = await lastValueFrom(
                 this.httpService.get<CompletedTasksResponse>(
-                    'https://api.todoist.com/api/v2/archive/items',
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
                     {
                         headers: { Authorization: `Bearer ${token}` },
                         params: {
                             limit: LIMIT,
+                            since: COMPLETED_TASKS_SINCE,
+                            until,
                             ...(projectId ? { project_id: projectId } : {}),
                             ...(taskId ? { parent_id: taskId } : {}),
                             ...(sectionId ? { section_id: sectionId } : {}),
@@ -181,28 +219,21 @@ export class TodoistService {
             return {
                 results: response.data.items,
                 nextCursor: response.data.has_more ? response.data.next_cursor : null,
-                completedInfo: response.data.completed_info,
             }
         }
 
         let nextCursor: string | null | undefined = undefined
 
         do {
-            const pageResult: {
-                results: SyncTask[]
-                nextCursor: string | null
-                completedInfo: CompletedInfo[]
-            } = await fetchPage(nextCursor)
+            const pageResult: { results: SyncTask[]; nextCursor: string | null } = await fetchPage(
+                nextCursor,
+            )
 
             allItems.push(...pageResult.results)
-            allCompletedInfo.push(...pageResult.completedInfo)
             nextCursor = pageResult.nextCursor
         } while (nextCursor !== null)
 
-        return {
-            items: allItems,
-            completedInfo: allCompletedInfo,
-        }
+        return allItems
     }
 
     private getTaskFromQuickAddResponse(responseData: SyncTask): Task {
