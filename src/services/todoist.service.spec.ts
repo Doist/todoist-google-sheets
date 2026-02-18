@@ -35,29 +35,103 @@ describe('TodoistService', () => {
                 token: 'kwijibo',
             })
             expect(result).toEqual([])
-            expect(httpServer).toHaveBeenCalledTimes(1)
+            expect(httpServer).toHaveBeenCalled()
         })
 
-        test.each([
-            [0, 1],
-            [50, 1],
-            [99, 1],
-            [100, 1],
-            [101, 2],
-            [150, 2],
-            [199, 2],
-            [200, 2],
-            [201, 3],
-        ])('when task count is %i, should call %i times', async (taskCount, expectedCalls) => {
-            setupGetCompletedItems(Array(taskCount).fill({}) as SyncTask[])
+        it('should fetch completed tasks across date windows', async () => {
+            setupGetCompletedItems([{} as SyncTask, {} as SyncTask])
             const target = await getTarget()
-            const httpServer = jest.spyOn(target['httpService'], 'get')
 
-            await target.getCompletedTasks({
+            const result = await target.getCompletedTasks({
                 projectId: '123',
                 token: 'kwijibo',
             })
-            expect(httpServer).toHaveBeenCalledTimes(expectedCalls)
+            expect(result.length).toBeGreaterThanOrEqual(2)
+        })
+
+        it('should send since and until params within 90-day windows', async () => {
+            const capturedParams: URLSearchParams[] = []
+
+            server.use(
+                rest.get(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    (req, res, ctx) => {
+                        capturedParams.push(req.url.searchParams)
+                        return res(ctx.json({ items: [] }))
+                    },
+                ),
+            )
+
+            const target = await getTarget()
+            await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
+
+            expect(capturedParams.length).toBeGreaterThan(0)
+            for (const params of capturedParams) {
+                const since = new Date(params.get('since')!)
+                const until = new Date(params.get('until')!)
+                const diffDays = (until.getTime() - since.getTime()) / (1000 * 60 * 60 * 24)
+                expect(diffDays).toBeLessThanOrEqual(90)
+            }
+        })
+
+        it('should handle pagination via next_cursor within a window', async () => {
+            const page1Items = Array(100).fill({}) as SyncTask[]
+            const page2Items = [{}] as SyncTask[]
+            let callCount = 0
+
+            server.use(
+                rest.get(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    (req, res, ctx) => {
+                        const cursor = req.url.searchParams.get('cursor')
+
+                        if (!cursor) {
+                            callCount++
+                            if (callCount === 1) {
+                                return res(
+                                    ctx.json({
+                                        items: page1Items,
+                                        next_cursor: 'page2',
+                                    }),
+                                )
+                            }
+                            return res(ctx.json({ items: [] }))
+                        }
+
+                        if (cursor === 'page2') {
+                            return res(ctx.json({ items: page2Items }))
+                        }
+
+                        return res(ctx.json({ items: [] }))
+                    },
+                ),
+            )
+
+            const target = await getTarget()
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+            })
+
+            expect(result.length).toBeGreaterThanOrEqual(101)
+        })
+
+        it('should return empty array and log error when API fails', async () => {
+            server.use(
+                rest.get(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    (_req, res, ctx) => {
+                        return res(ctx.status(400))
+                    },
+                ),
+            )
+
+            const target = await getTarget()
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+            })
+            expect(result).toEqual([])
         })
     })
 
@@ -118,9 +192,8 @@ describe('TodoistService', () => {
 
                     return res(
                         ctx.json({
-                            has_more: hasMore,
-                            next_cursor: nextCursor,
                             items: tasks,
+                            ...(nextCursor ? { next_cursor: nextCursor } : {}),
                         }),
                     )
                 },

@@ -49,7 +49,12 @@
         "notes": "Axios is vulnerable to DoS attack through lack of data size check - requires dependency updates further up the tree (like the @doist packages)",
         "expiry": "2026/06/30"
     },
-    "1113092": {
+    "1113274": {
+        "active": true,
+        "notes": "Axios is Vulnerable to Denial of Service via __proto__ Key in mergeConfig - requires dependency updates further up the tree (like the @doist packages)",
+        "expiry": "2026/06/30"
+    },
+    "1113275": {
         "active": true,
         "notes": "Axios is Vulnerable to Denial of Service via __proto__ Key in mergeConfig - requires dependency updates further up the tree (like the @doist packages)",
         "expiry": "2026/06/30"
@@ -69,14 +74,9 @@
         "notes": "qs arrayLimit bypass in bracket notation allows DoS via memory exhaustion - requires dependency updates",
         "expiry": "2026/06/30"
     },
-    "1112714": {
+    "1113161": {
         "active": true,
-        "notes": "js-yaml has prototype pollution in merge (<<) - requires dependency updates",
-        "expiry": "2026/06/30"
-    },
-    "1112715": {
-        "active": true,
-        "notes": "js-yaml has prototype pollution in merge (<<) - requires dependency updates",
+        "notes": "qs arrayLimit bypass in comma parsing allows denial of service - requires dependency updates",
         "expiry": "2026/06/30"
     }
 }
