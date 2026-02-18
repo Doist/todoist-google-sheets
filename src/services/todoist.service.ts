@@ -1,7 +1,7 @@
 import { Section, TodoistApi, User } from '@doist/todoist-api-typescript'
 
 import { HttpService } from '@nestjs/axios'
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { lastValueFrom } from 'rxjs'
 
 import type { Task } from '../types'
@@ -9,11 +9,18 @@ import type { Task } from '../types'
 const LIMIT = 100
 
 /**
- * A date predating Todoist's existence (founded 2007), used as the `since`
- * parameter when fetching completed tasks from the v1 API to ensure all
+ * The v1 by_completion_date endpoint enforces a maximum date range of 3 months.
+ * We use 90-day windows to stay within this limit while fetching all
+ * historical completed tasks by walking backwards from today.
+ */
+const MAX_WINDOW_DAYS = 90
+
+/**
+ * A date predating Todoist's existence (founded 2007), used as the lower
+ * bound when walking backwards through date windows to ensure all
  * historical completed tasks are included.
  */
-const COMPLETED_TASKS_SINCE = '2006-01-01T00:00:00Z'
+const EARLIEST_DATE = new Date('2006-01-01T00:00:00Z')
 
 type SyncDue = {
     date: string
@@ -58,13 +65,14 @@ export type CompletedInfo = {
 }
 
 type CompletedTasksResponse = {
-    has_more: boolean
-    next_cursor: string | null
     items: SyncTask[]
+    next_cursor?: string | null
 }
 
 @Injectable()
 export class TodoistService {
+    private readonly logger = new Logger(TodoistService.name)
+
     constructor(private readonly httpService: HttpService) {}
 
     async getProjectTasks(params: { token: string; projectId: string }): Promise<Task[]> {
@@ -139,6 +147,12 @@ export class TodoistService {
 
             return items.map((task) => this.getTaskFromQuickAddResponse(task))
         } catch (error: unknown) {
+            this.logger.error('Failed to fetch completed tasks', {
+                projectId,
+                taskId,
+                sectionId,
+                error: error instanceof Error ? error.message : error,
+            })
             return []
         }
     }
@@ -165,6 +179,9 @@ export class TodoistService {
 
             return response.data.completed_info
         } catch (error: unknown) {
+            this.logger.error('Failed to fetch completed_info from Sync API', {
+                error: error instanceof Error ? error.message : error,
+            })
             return []
         }
     }
@@ -172,9 +189,9 @@ export class TodoistService {
     /**
      * Fetches completed tasks using the documented Todoist API v1 endpoint.
      *
-     * Uses a wide date range (since 2006) to fetch all completed tasks,
-     * effectively replicating the behavior of the previous undocumented
-     * archive/items endpoint.
+     * The by_completion_date endpoint enforces a maximum date range of 3 months,
+     * so we walk backwards from today in 90-day windows until we reach
+     * EARLIEST_DATE (2006) to ensure all historical completed tasks are included.
      *
      * @see https://developer.todoist.com/api/v1/#tag/Tasks/operation/getTasks_Completed_By_Completion_Date
      */
@@ -190,50 +207,113 @@ export class TodoistService {
         sectionId?: string
     }): Promise<SyncTask[]> {
         const allItems: SyncTask[] = []
-        const until = new Date().toISOString()
 
-        const fetchPage = async (
-            cursor?: string | null,
-        ): Promise<{
-            results: SyncTask[]
-            nextCursor: string | null
-        }> => {
-            const response = await lastValueFrom(
-                this.httpService.get<CompletedTasksResponse>(
-                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                    {
-                        headers: { Authorization: `Bearer ${token}` },
-                        params: {
-                            limit: LIMIT,
-                            since: COMPLETED_TASKS_SINCE,
-                            until,
-                            ...(projectId ? { project_id: projectId } : {}),
-                            ...(taskId ? { parent_id: taskId } : {}),
-                            ...(sectionId ? { section_id: sectionId } : {}),
-                            ...(cursor ? { cursor } : {}),
-                        },
-                    },
-                ),
-            )
-
-            return {
-                results: response.data.items,
-                nextCursor: response.data.has_more ? response.data.next_cursor : null,
-            }
+        for (const { since, until } of this.generateDateWindows()) {
+            const windowItems = await this.fetchCompletedTasksForWindow({
+                token,
+                since,
+                until,
+                projectId,
+                taskId,
+                sectionId,
+            })
+            allItems.push(...windowItems)
         }
 
-        let nextCursor: string | null | undefined = undefined
+        return allItems
+    }
+
+    /**
+     * Generates date windows walking backwards from today to EARLIEST_DATE,
+     * each at most MAX_WINDOW_DAYS long.
+     */
+    private *generateDateWindows(): Generator<{ since: string; until: string }> {
+        let windowEnd = new Date()
+        const earliest = EARLIEST_DATE
+
+        while (windowEnd > earliest) {
+            const windowStart = new Date(
+                windowEnd.getTime() - MAX_WINDOW_DAYS * 24 * 60 * 60 * 1000,
+            )
+            const effectiveStart = windowStart < earliest ? earliest : windowStart
+
+            yield {
+                since: effectiveStart.toISOString(),
+                until: windowEnd.toISOString(),
+            }
+
+            windowEnd = effectiveStart
+        }
+    }
+
+    private async fetchCompletedTasksForWindow({
+        token,
+        since,
+        until,
+        projectId,
+        taskId,
+        sectionId,
+    }: {
+        token: string
+        since: string
+        until: string
+        projectId?: string
+        taskId?: string
+        sectionId?: string
+    }): Promise<SyncTask[]> {
+        const windowItems: SyncTask[] = []
+        let nextCursor: string | null = null
 
         do {
-            const pageResult: { results: SyncTask[]; nextCursor: string | null } = await fetchPage(
-                nextCursor,
-            )
+            const data: { items: SyncTask[]; nextCursor: string | null } = await this.fetchCompletedTasksPage({
+                token,
+                since,
+                until,
+                projectId,
+                taskId,
+                sectionId,
+                cursor: nextCursor,
+            })
 
-            allItems.push(...pageResult.results)
-            nextCursor = pageResult.nextCursor
-        } while (nextCursor !== null)
+            windowItems.push(...data.items)
+            nextCursor = data.nextCursor
+        } while (nextCursor)
 
-        return allItems
+        return windowItems
+    }
+
+    private async fetchCompletedTasksPage(params: {
+        token: string
+        since: string
+        until: string
+        projectId?: string
+        taskId?: string
+        sectionId?: string
+        cursor: string | null
+    }): Promise<{ items: SyncTask[]; nextCursor: string | null }> {
+        const { token, since, until, projectId, taskId, sectionId, cursor } = params
+        const response = await lastValueFrom(
+            this.httpService.get<CompletedTasksResponse>(
+                'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    params: {
+                        limit: LIMIT,
+                        since,
+                        until,
+                        ...(projectId ? { project_id: projectId } : {}),
+                        ...(taskId ? { parent_id: taskId } : {}),
+                        ...(sectionId ? { section_id: sectionId } : {}),
+                        ...(cursor ? { cursor } : {}),
+                    },
+                },
+            ),
+        )
+
+        return {
+            items: response.data.items ?? [],
+            nextCursor: response.data.next_cursor ?? null,
+        }
     }
 
     private getTaskFromQuickAddResponse(responseData: SyncTask): Task {
