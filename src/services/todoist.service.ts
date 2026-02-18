@@ -265,15 +265,16 @@ export class TodoistService {
         let nextCursor: string | null = null
 
         do {
-            const data: { items: SyncTask[]; nextCursor: string | null } = await this.fetchCompletedTasksPage({
-                token,
-                since,
-                until,
-                projectId,
-                taskId,
-                sectionId,
-                cursor: nextCursor,
-            })
+            const data: { items: SyncTask[]; nextCursor: string | null } =
+                await this.fetchCompletedTasksPage({
+                    token,
+                    since,
+                    until,
+                    projectId,
+                    taskId,
+                    sectionId,
+                    cursor: nextCursor,
+                })
 
             windowItems.push(...data.items)
             nextCursor = data.nextCursor
