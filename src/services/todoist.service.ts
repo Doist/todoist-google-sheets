@@ -312,7 +312,7 @@ export class TodoistService {
         )
 
         return {
-            items: response.data.items ?? [],
+            items: response.data.items,
             nextCursor: response.data.next_cursor ?? null,
         }
     }
