@@ -74,6 +74,127 @@ describe('TodoistService', () => {
             }
         })
 
+        it('should stop after consecutive empty windows', async () => {
+            let windowCount = 0
+
+            server.use(
+                rest.get(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    (_req, res, ctx) => {
+                        windowCount++
+                        return res(ctx.json({ items: [] }))
+                    },
+                ),
+            )
+
+            const target = await getTarget()
+            await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
+
+            // With CONSECUTIVE_EMPTY_WINDOW_THRESHOLD = 2, should stop after 2 empty windows
+            expect(windowCount).toBe(2)
+        })
+
+        it('should stop early when expectedCount items are found', async () => {
+            let windowCount = 0
+
+            server.use(
+                rest.get(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    (_req, res, ctx) => {
+                        windowCount++
+                        if (windowCount === 1) {
+                            return res(
+                                ctx.json({
+                                    items: [{} as SyncTask, {} as SyncTask, {} as SyncTask],
+                                }),
+                            )
+                        }
+                        return res(ctx.json({ items: [] }))
+                    },
+                ),
+            )
+
+            const target = await getTarget()
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+                expectedCount: 3,
+            })
+
+            expect(result).toHaveLength(3)
+            expect(windowCount).toBe(1)
+        })
+
+        it('should continue scanning if expectedCount not yet reached', async () => {
+            let windowCount = 0
+
+            server.use(
+                rest.get(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    (_req, res, ctx) => {
+                        windowCount++
+                        if (windowCount === 1) {
+                            return res(ctx.json({ items: [{} as SyncTask] }))
+                        }
+                        if (windowCount === 2) {
+                            return res(ctx.json({ items: [] }))
+                        }
+                        if (windowCount === 3) {
+                            return res(ctx.json({ items: [{} as SyncTask] }))
+                        }
+                        return res(ctx.json({ items: [] }))
+                    },
+                ),
+            )
+
+            const target = await getTarget()
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+                expectedCount: 2,
+            })
+
+            expect(result).toHaveLength(2)
+            expect(windowCount).toBe(3)
+        })
+
+        it('should reset consecutive empty counter when items are found', async () => {
+            let windowCount = 0
+
+            server.use(
+                rest.get(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    (_req, res, ctx) => {
+                        windowCount++
+                        // Window 1: items found
+                        if (windowCount === 1) {
+                            return res(ctx.json({ items: [{} as SyncTask] }))
+                        }
+                        // Window 2: empty (consecutive = 1)
+                        if (windowCount === 2) {
+                            return res(ctx.json({ items: [] }))
+                        }
+                        // Window 3: items found again (resets consecutive counter)
+                        if (windowCount === 3) {
+                            return res(ctx.json({ items: [{} as SyncTask] }))
+                        }
+                        // Window 4+: empty
+                        return res(ctx.json({ items: [] }))
+                    },
+                ),
+            )
+
+            const target = await getTarget()
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+            })
+
+            // Should scan: win1(found), win2(empty,1), win3(found,reset), win4(empty,1), win5(empty,2=stop)
+            expect(windowCount).toBe(5)
+            expect(result).toHaveLength(2)
+        })
+
         it('should handle pagination via next_cursor within a window', async () => {
             const page1Items = Array(100).fill({}) as SyncTask[]
             const page2Items = [{}] as SyncTask[]

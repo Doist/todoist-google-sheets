@@ -262,29 +262,32 @@ export class ActionsService extends ActionsServiceBase {
     }): Promise<Task[]> {
         const { appToken, projectId, tasks, sections } = params
 
-        // Fetch completed_info from the Sync API to determine which tasks
-        // and sections have completed children that need to be fetched.
-        // This uses the documented v1 Sync endpoint.
         const completedInfo = await this.todoistService.getCompletedInfo({ token: appToken })
 
-        // Fetch completed tasks at the project level
+        const projectExpectedCount = completedInfo.find(
+            (info) => info.project_id === projectId,
+        )?.completed_items
+
         const projectCompletedTasks = await this.todoistService.getCompletedTasks({
             token: appToken,
             projectId,
+            expectedCount: projectExpectedCount,
         })
 
-        const taskIdsWithCompletedSubtasks = this.findTaskIdsWithCompletedSubtasks(
+        const taskIdsWithCompletedSubtasks = this.findIdsWithCompletedChildren(
             completedInfo,
-            tasks,
+            tasks.map((t) => t.id),
+            'item_id',
         )
-        const sectionIdsWithCompletedTasks = this.findSectionIdsWithCompletedTasks(
+        const sectionIdsWithCompletedTasks = this.findIdsWithCompletedChildren(
             completedInfo,
-            sections,
+            sections.map((s) => s.id),
+            'section_id',
         )
 
         const [taskCompletedTasks, sectionCompletedTasks] = await Promise.all([
-            this.fetchCompletedTasksForTaskIds(appToken, taskIdsWithCompletedSubtasks),
-            this.fetchCompletedTasksForSectionIds(appToken, sectionIdsWithCompletedTasks),
+            this.fetchCompletedTasksForIds(appToken, taskIdsWithCompletedSubtasks, 'taskId'),
+            this.fetchCompletedTasksForIds(appToken, sectionIdsWithCompletedTasks, 'sectionId'),
         ])
 
         let allCompletedTasks = [
@@ -293,112 +296,70 @@ export class ActionsService extends ActionsServiceBase {
             ...sectionCompletedTasks,
         ]
 
-        let completedTasksIdsWithCompletedSubtasks = this.findTaskIdsWithCompletedSubtasks(
+        let completedTasksWithChildren = this.findIdsWithCompletedChildren(
             completedInfo,
-            allCompletedTasks,
+            allCompletedTasks.map((t) => t.id),
+            'item_id',
         )
 
-        // completed tasks can have completed subtasks, so we need to loop
-        // until no more completed subtasks are found
-        while (completedTasksIdsWithCompletedSubtasks.size > 0) {
-            const subtaskResults = await this.fetchCompletedTasksForTaskIds(
+        while (completedTasksWithChildren.size > 0) {
+            const subtaskResults = await this.fetchCompletedTasksForIds(
                 appToken,
-                completedTasksIdsWithCompletedSubtasks,
+                completedTasksWithChildren,
+                'taskId',
             )
 
             allCompletedTasks = [...allCompletedTasks, ...subtaskResults]
 
-            completedTasksIdsWithCompletedSubtasks = this.findTaskIdsWithCompletedSubtasks(
+            completedTasksWithChildren = this.findIdsWithCompletedChildren(
                 completedInfo,
-                subtaskResults,
+                subtaskResults.map((t) => t.id),
+                'item_id',
             )
         }
 
         return allCompletedTasks
     }
 
-    private async fetchCompletedTasksForTaskIds(
+    private async fetchCompletedTasksForIds(
         appToken: string,
-        taskIds: Set<string>,
+        idsWithCounts: Map<string, number>,
+        idType: 'taskId' | 'sectionId',
     ): Promise<Task[]> {
-        if (taskIds.size === 0) {
+        if (idsWithCounts.size === 0) {
             return []
         }
 
-        // Use batched execution to limit concurrent API calls to 10 at a time
-        // This prevents overwhelming the API when there are many tasks with completed subtasks
         const results = await batchExecute(
-            Array.from(taskIds),
-            (taskId) =>
+            Array.from(idsWithCounts.entries()),
+            ([id, expectedCount]) =>
                 this.todoistService.getCompletedTasks({
                     token: appToken,
-                    taskId,
+                    [idType]: id,
+                    expectedCount,
                 }),
-            10, // Max 10 concurrent requests
+            10,
         )
 
         return results.flat()
     }
 
-    private async fetchCompletedTasksForSectionIds(
-        appToken: string,
-        sectionIds: Set<string>,
-    ): Promise<Task[]> {
-        if (sectionIds.size === 0) {
-            return []
+    private findIdsWithCompletedChildren(
+        completedInfo: { item_id?: string; section_id?: string; completed_items: number }[],
+        entityIds: string[],
+        infoKey: 'item_id' | 'section_id',
+    ): Map<string, number> {
+        const result = new Map<string, number>()
+        const entityIdSet = new Set(entityIds)
+
+        for (const info of completedInfo) {
+            const id = info[infoKey]
+            if (id && entityIdSet.has(id) && info.completed_items > 0) {
+                result.set(id, info.completed_items)
+            }
         }
 
-        // Use batched execution to limit concurrent API calls to 10 at a time
-        // This prevents overwhelming the API when there are many sections with completed tasks
-        const results = await batchExecute(
-            Array.from(sectionIds),
-            (sectionId) =>
-                this.todoistService.getCompletedTasks({
-                    token: appToken,
-                    sectionId,
-                }),
-            10, // Max 10 concurrent requests
-        )
-
-        return results.flat()
-    }
-
-    private findTaskIdsWithCompletedSubtasks(
-        completedInfo: { item_id?: string; completed_items: number }[],
-        tasks: Task[],
-    ): Set<string> {
-        const taskIds = new Set<string>()
-        const taskIdSet = new Set(tasks.map((task) => task.id))
-
-        // Find tasks that have completed subtasks and are in our tasks list
-        completedInfo.forEach((info) => {
-            if (info.item_id && taskIdSet.has(info.item_id) && info.completed_items > 0) {
-                taskIds.add(info.item_id)
-            }
-        })
-
-        return taskIds
-    }
-
-    private findSectionIdsWithCompletedTasks(
-        completedInfo: { section_id?: string; completed_items: number }[],
-        sections: Section[],
-    ): Set<string> {
-        const sectionIds = new Set<string>()
-        const activeSectionIds = new Set(sections.map((section) => section.id))
-
-        // Find sections that have completed tasks and are in our active sections list
-        completedInfo.forEach((info) => {
-            if (
-                info.section_id &&
-                activeSectionIds.has(info.section_id) &&
-                info.completed_items > 0
-            ) {
-                sectionIds.add(info.section_id)
-            }
-        })
-
-        return sectionIds
+        return result
     }
 
     private createSheetName(projectName: string): string {
