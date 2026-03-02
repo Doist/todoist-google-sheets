@@ -10,15 +10,21 @@ const LIMIT = 100
 
 /**
  * The v1 by_completion_date endpoint enforces a maximum date range of 3 months.
- * We use 90-day windows to stay within this limit while fetching all
- * historical completed tasks by walking backwards from today.
+ * We use 90-day windows to stay within this limit while fetching
+ * completed tasks by walking backwards from today.
  */
 const MAX_WINDOW_DAYS = 90
 
 /**
- * A date predating Todoist's existence (founded 2007), used as the lower
- * bound when walking backwards through date windows to ensure all
- * historical completed tasks are included.
+ * Stop scanning backwards after this many consecutive 90-day windows
+ * return zero results. Acts as a safety net alongside the expectedCount
+ * early-termination to avoid unnecessary API calls.
+ */
+const CONSECUTIVE_EMPTY_WINDOW_THRESHOLD = 2
+
+/**
+ * Hard lower bound for date window generation. Predates Todoist's existence
+ * (founded 2007) so no completed tasks can exist before this date.
  */
 const EARLIEST_DATE = new Date('2006-01-01T00:00:00Z')
 
@@ -131,11 +137,13 @@ export class TodoistService {
         token,
         taskId,
         sectionId,
+        expectedCount,
     }: {
         token: string
         projectId?: string
         taskId?: string
         sectionId?: string
+        expectedCount?: number
     }): Promise<Task[]> {
         try {
             const items = await this.getCompletedTasksInternal({
@@ -143,6 +151,7 @@ export class TodoistService {
                 projectId,
                 taskId,
                 sectionId,
+                expectedCount,
             })
 
             return items.map((task) => this.getTaskFromQuickAddResponse(task))
@@ -190,8 +199,11 @@ export class TodoistService {
      * Fetches completed tasks using the documented Todoist API v1 endpoint.
      *
      * The by_completion_date endpoint enforces a maximum date range of 3 months,
-     * so we walk backwards from today in 90-day windows until we reach
-     * EARLIEST_DATE (2006) to ensure all historical completed tasks are included.
+     * so we walk backwards from today in 90-day windows. To avoid making ~81
+     * requests per entity (scanning back to 2006), we terminate early when:
+     *
+     * 1. We've collected at least `expectedCount` items (from completed_info), OR
+     * 2. We've seen CONSECUTIVE_EMPTY_WINDOW_THRESHOLD consecutive empty windows
      *
      * @see https://developer.todoist.com/api/v1/#tag/Tasks/operation/getTasks_Completed_By_Completion_Date
      */
@@ -200,13 +212,16 @@ export class TodoistService {
         token,
         taskId,
         sectionId,
+        expectedCount,
     }: {
         token: string
         projectId?: string
         taskId?: string
         sectionId?: string
+        expectedCount?: number
     }): Promise<SyncTask[]> {
         const allItems: SyncTask[] = []
+        let consecutiveEmptyWindows = 0
 
         for (const { since, until } of this.generateDateWindows()) {
             const windowItems = await this.fetchCompletedTasksForWindow({
@@ -218,6 +233,19 @@ export class TodoistService {
                 sectionId,
             })
             allItems.push(...windowItems)
+
+            if (windowItems.length === 0) {
+                consecutiveEmptyWindows++
+                if (consecutiveEmptyWindows >= CONSECUTIVE_EMPTY_WINDOW_THRESHOLD) {
+                    break
+                }
+            } else {
+                consecutiveEmptyWindows = 0
+            }
+
+            if (expectedCount !== undefined && allItems.length >= expectedCount) {
+                break
+            }
         }
 
         return allItems
@@ -229,13 +257,12 @@ export class TodoistService {
      */
     private *generateDateWindows(): Generator<{ since: string; until: string }> {
         let windowEnd = new Date()
-        const earliest = EARLIEST_DATE
 
-        while (windowEnd > earliest) {
+        while (windowEnd > EARLIEST_DATE) {
             const windowStart = new Date(
                 windowEnd.getTime() - MAX_WINDOW_DAYS * 24 * 60 * 60 * 1000,
             )
-            const effectiveStart = windowStart < earliest ? earliest : windowStart
+            const effectiveStart = windowStart < EARLIEST_DATE ? EARLIEST_DATE : windowStart
 
             yield {
                 since: effectiveStart.toISOString(),

@@ -78,5 +78,30 @@
         "active": true,
         "notes": "qs arrayLimit bypass in comma parsing allows denial of service - requires dependency updates",
         "expiry": "2026/06/30"
+    },
+    "1113465": {
+        "active": true,
+        "notes": "minimatch ReDoS via repeated wildcards - from typeorm dependency",
+        "expiry": "2026/06/30"
+    },
+    "1113544": {
+        "active": true,
+        "notes": "minimatch ReDoS via multiple non-adjacent GLOBSTAR segments - from typeorm dependency",
+        "expiry": "2026/06/30"
+    },
+    "1113552": {
+        "active": true,
+        "notes": "minimatch ReDoS via nested extglobs - from typeorm dependency",
+        "expiry": "2026/06/30"
+    },
+    "1113635": {
+        "active": true,
+        "notes": "Multer DoS via incomplete cleanup - requires dependency updates",
+        "expiry": "2026/06/30"
+    },
+    "1113636": {
+        "active": true,
+        "notes": "Multer DoS via resource exhaustion - requires dependency updates",
+        "expiry": "2026/06/30"
     }
 }
