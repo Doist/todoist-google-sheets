@@ -6,7 +6,7 @@ import {
     Task,
 } from '../types'
 
-import type { Section, User as Collaborator } from '@doist/todoist-api-typescript'
+import type { Section, User as Collaborator } from '@doist/todoist-sdk'
 
 type Props = {
     tasks: Task[]

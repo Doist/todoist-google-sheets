@@ -1,4 +1,4 @@
-import { Section, Task, TodoistApi } from '@doist/todoist-api-typescript'
+import { Section, Task, TodoistApi } from '@doist/todoist-sdk'
 import { CoreModule, StateService } from '@doist/ui-extensions-server'
 
 import { HttpModule } from '@nestjs/axios'

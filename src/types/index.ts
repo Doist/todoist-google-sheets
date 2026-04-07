@@ -1,4 +1,4 @@
-import type { Task as RestTask } from '@doist/todoist-api-typescript'
+import type { Task as RestTask } from '@doist/todoist-sdk'
 
 /**
  * Custom delimiter rather than using a comma as task content/descriptions

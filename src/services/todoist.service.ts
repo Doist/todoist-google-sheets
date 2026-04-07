@@ -1,4 +1,4 @@
-import { Section, TodoistApi, User } from '@doist/todoist-api-typescript'
+import { Section, TodoistApi, User } from '@doist/todoist-sdk'
 
 import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'

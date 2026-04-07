@@ -30,7 +30,7 @@ import { GoogleSheetsService } from './google-sheets.service'
 import { TodoistService } from './todoist.service'
 import { UserDatabaseService } from './user-database.service'
 
-import type { Section } from '@doist/todoist-api-typescript'
+import type { Section } from '@doist/todoist-sdk'
 import type {
     DoistCardRequest,
     DoistCardResponse,

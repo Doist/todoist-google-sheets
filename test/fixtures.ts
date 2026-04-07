@@ -3,7 +3,7 @@ import { build, perBuild, sequence } from '@jackfranklin/test-data-bot'
 
 import { User } from '../src/entities/user.entity'
 
-import type { Section, Task, User as Collaborator } from '@doist/todoist-api-typescript'
+import type { Section, Task, User as Collaborator } from '@doist/todoist-sdk'
 import type { ExportOptionsToUse } from '../src/types'
 
 export const buildUser = build<User>('User', {
