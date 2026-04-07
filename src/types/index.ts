@@ -32,6 +32,4 @@ export type ExportOptionsToUse = Record<ExportOptions, boolean> & {
     includeCompleted: boolean
 }
 
-export type Task = Omit<RestTask, 'url'> & {
-    completedAt?: string
-}
+export type Task = Omit<RestTask, 'url'>

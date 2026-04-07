@@ -1,6 +1,7 @@
 {
     "extends": "@doist/tsconfig",
     "compilerOptions": {
+        "importsNotUsedAsValues": "remove",
         "outDir": "./dist",
         "baseUrl": "./src",
         "target": "es2017",
