@@ -1,4 +1,4 @@
-import { TodoistApi } from '@doist/todoist-api-typescript'
+import { TodoistApi } from '@doist/todoist-sdk'
 import { TODOIST_APP_TOKEN_HEADER } from '@doist/ui-extensions-server'
 
 import request from 'supertest'

@@ -80,7 +80,7 @@ export class GoogleSheetsService extends AuthenticationClient {
             return undefined
         }
         const authHeader = headers['Authorization']
-        if (!authHeader?.startsWith('Bearer ')) {
+        if (!authHeader.startsWith('Bearer ')) {
             return undefined
         }
 

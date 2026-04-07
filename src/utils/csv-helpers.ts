@@ -6,7 +6,7 @@ import {
     Task,
 } from '../types'
 
-import type { Section, User as Collaborator } from '@doist/todoist-api-typescript'
+import type { Section, User as Collaborator } from '@doist/todoist-sdk'
 
 type Props = {
     tasks: Task[]
@@ -87,7 +87,7 @@ function createTaskRow({ task, exportOptions, tasks, collaborators, sections }: 
 
         switch (option) {
             case 'completed':
-                items.push(task.isCompleted ? 'true' : 'false')
+                items.push(task.checked ? 'true' : 'false')
                 break
             case 'due':
                 items.push(task.due?.string ?? '')
@@ -108,11 +108,13 @@ function createTaskRow({ task, exportOptions, tasks, collaborators, sections }: 
                 break
             case 'assignee':
                 items.push(
-                    task.assigneeId ? getCollaboratorName(task.assigneeId, collaborators) : '',
+                    task.responsibleUid
+                        ? getCollaboratorName(task.responsibleUid, collaborators)
+                        : '',
                 )
                 break
             case 'createdDate':
-                items.push(task.createdAt)
+                items.push(task.addedAt ?? '')
                 break
             case 'labels':
                 items.push(task.labels.join('; '))

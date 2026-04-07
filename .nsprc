@@ -69,11 +69,6 @@
         "notes": "Lodash has Prototype Pollution Vulnerability in _.unset and _.omit functions - requires dependency updates",
         "expiry": "2026/06/30"
     },
-    "1113132": {
-        "active": true,
-        "notes": "qs arrayLimit bypass in bracket notation allows DoS via memory exhaustion - requires dependency updates",
-        "expiry": "2026/06/30"
-    },
     "1113161": {
         "active": true,
         "notes": "qs arrayLimit bypass in comma parsing allows denial of service - requires dependency updates",
@@ -102,6 +97,111 @@
     "1113636": {
         "active": true,
         "notes": "Multer DoS via resource exhaustion - requires dependency updates",
+        "expiry": "2026/06/30"
+    },
+    "1113996": {
+        "active": true,
+        "notes": "Multer DoS via uncontrolled recursion - requires dependency updates",
+        "expiry": "2026/06/30"
+    },
+    "1115990": {
+        "active": true,
+        "notes": "@nestjs/core injection vulnerability - requires NestJS upgrade",
+        "expiry": "2026/06/30"
+    },
+    "1115541": {
+        "active": true,
+        "notes": "brace-expansion DoS via zero-step sequence - from typeorm dependency",
+        "expiry": "2026/06/30"
+    },
+    "1114301": {
+        "active": true,
+        "notes": "file-type infinite loop in ASF parser on malformed input",
+        "expiry": "2026/06/30"
+    },
+    "1114726": {
+        "active": true,
+        "notes": "file-type ZIP decompression bomb DoS via Content_Types.xml",
+        "expiry": "2026/06/30"
+    },
+    "1115538": {
+        "active": true,
+        "notes": "Handlebars.js JavaScript injection via AST type confusion by tampering @partial-block",
+        "expiry": "2026/06/30"
+    },
+    "1115539": {
+        "active": true,
+        "notes": "Handlebars.js JavaScript injection via AST type confusion",
+        "expiry": "2026/06/30"
+    },
+    "1115544": {
+        "active": true,
+        "notes": "Handlebars.js prototype pollution leading to XSS through partial template injection",
+        "expiry": "2026/06/30"
+    },
+    "1115588": {
+        "active": true,
+        "notes": "Handlebars.js prototype method access control gap via missing __lookupSetter__ blocklist entry",
+        "expiry": "2026/06/30"
+    },
+    "1115589": {
+        "active": true,
+        "notes": "Handlebars.js property access validation bypass in container.lookup",
+        "expiry": "2026/06/30"
+    },
+    "1115692": {
+        "active": true,
+        "notes": "Handlebars.js JavaScript injection in CLI precompiler via unescaped names and options",
+        "expiry": "2026/06/30"
+    },
+    "1115693": {
+        "active": true,
+        "notes": "Handlebars.js JavaScript injection via AST type confusion when passing object as dynamic partial",
+        "expiry": "2026/06/30"
+    },
+    "1115694": {
+        "active": true,
+        "notes": "Handlebars.js DoS via malformed decorator syntax in template compilation",
+        "expiry": "2026/06/30"
+    },
+    "1115806": {
+        "active": true,
+        "notes": "lodash code injection via _.template imports key names",
+        "expiry": "2026/06/30"
+    },
+    "1115810": {
+        "active": true,
+        "notes": "lodash prototype pollution via array path bypass in _.unset and _.omit",
+        "expiry": "2026/06/30"
+    },
+    "1115545": {
+        "active": true,
+        "notes": "node-forge basicConstraints bypass in certificate chain verification",
+        "expiry": "2026/06/30"
+    },
+    "1115546": {
+        "active": true,
+        "notes": "node-forge signature forgery in Ed25519 due to missing S > L check",
+        "expiry": "2026/06/30"
+    },
+    "1115548": {
+        "active": true,
+        "notes": "node-forge DoS via infinite loop in BigInteger.modInverse() with zero input",
+        "expiry": "2026/06/30"
+    },
+    "1115612": {
+        "active": true,
+        "notes": "node-forge signature forgery in RSA-PKCS due to ASN.1 extra field",
+        "expiry": "2026/06/30"
+    },
+    "1115527": {
+        "active": true,
+        "notes": "path-to-regexp ReDoS via multiple route parameters - from express dependency",
+        "expiry": "2026/06/30"
+    },
+    "1113719": {
+        "active": true,
+        "notes": "qs arrayLimit bypass in bracket notation allows DoS via memory exhaustion - requires dependency updates",
         "expiry": "2026/06/30"
     }
 }

@@ -3,7 +3,7 @@ import { build, perBuild, sequence } from '@jackfranklin/test-data-bot'
 
 import { User } from '../src/entities/user.entity'
 
-import type { Section, Task, User as Collaborator } from '@doist/todoist-api-typescript'
+import type { Section, Task, User as Collaborator } from '@doist/todoist-sdk'
 import type { ExportOptionsToUse } from '../src/types'
 
 export const buildUser = build<User>('User', {
@@ -38,23 +38,30 @@ export const buildOptions = build<ExportOptionsToUse>('ExportOptionsToUse', {
 export const buildTask = build<Task>('Task', {
     fields: {
         id: sequence((num) => String(num + 10000000)),
+        userId: '123',
         content: perBuild(() => faker.lorem.sentence()),
-        isCompleted: false,
-        createdAt: perBuild(() => faker.date.recent().toDateString()),
+        checked: false,
+        addedAt: perBuild(() => faker.date.recent().toDateString()),
+        completedAt: null,
+        updatedAt: null,
         description: '',
         labels: [],
-        order: 0,
+        childOrder: 0,
         priority: 0,
         projectId: '12345',
         sectionId: '12345',
-        creatorId: '123',
-        assigneeId: null,
+        addedByUid: '123',
+        responsibleUid: null,
         url: 'https://todoist.com/showTask?id=12345',
         parentId: null,
         deadline: null,
         duration: null,
         due: null,
-        assignerId: null,
+        assignedByUid: null,
+        isDeleted: false,
+        dayOrder: 0,
+        isCollapsed: false,
+        isUncompletable: false,
     },
 })
 
@@ -71,6 +78,7 @@ export const buildSection = build<Section>('Section', {
         isArchived: false,
         archivedAt: null,
         sectionOrder: 0,
+        url: 'https://todoist.com/app/project/12345',
     },
 })
 

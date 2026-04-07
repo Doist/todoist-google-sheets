@@ -1,4 +1,4 @@
-import { TodoistApi } from '@doist/todoist-api-typescript'
+import { TodoistApi } from '@doist/todoist-sdk'
 import { AppTokenService } from '@doist/ui-extensions-server'
 
 import { GoogleSheetsService } from '../src/services/google-sheets.service'

@@ -1,4 +1,4 @@
-import type { Task as RestTask } from '@doist/todoist-api-typescript'
+import type { Task as RestTask } from '@doist/todoist-sdk'
 
 /**
  * Custom delimiter rather than using a comma as task content/descriptions
@@ -32,6 +32,4 @@ export type ExportOptionsToUse = Record<ExportOptions, boolean> & {
     includeCompleted: boolean
 }
 
-export type Task = Omit<RestTask, 'url'> & {
-    completedAt?: string
-}
+export type Task = Omit<RestTask, 'url'>

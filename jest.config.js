@@ -9,7 +9,7 @@ module.exports = {
     globalSetup: join(__dirname, 'global-setup.js'),
     setupFilesAfterEnv: [join(__dirname, 'jest.setup.js')],
     restoreMocks: true,
-    moduleNameMapper: {
-        '^axios$': 'axios/dist/node/axios.cjs',
+    testEnvironmentOptions: {
+        customExportConditions: ['node', 'node-addons'],
     },
 }
