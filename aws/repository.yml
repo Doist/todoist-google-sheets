@@ -10,6 +10,7 @@ Resources:
     Repository:
         Type: AWS::ECR::Repository
         Properties:
+            ImageTagMutability: IMMUTABLE
             RepositoryName: !Sub '${ServiceName}'
             LifecyclePolicy:
                 LifecyclePolicyText: |

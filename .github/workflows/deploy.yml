@@ -58,7 +58,6 @@ jobs:
                   cache-from: type=gha,scope=${{ github.repository }}
                   cache-to: type=gha,scope=${{ github.repository }},mode=max
                   tags: |
-                      ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.REPO }}:latest
                       ${{ secrets.AWS_ACCOUNT }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.REPO }}:${{ env.VERSION }}
               env:
                   VERSION: ${{ steps.git.outputs.short }}
