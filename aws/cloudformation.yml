@@ -207,7 +207,9 @@ Resources:
                           Federated: !Sub 'arn:aws:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com'
                       Condition:
                           StringEquals:
-                              token.actions.githubusercontent.com:sub: !Sub 'repo:Doist/${ServiceName}:ref:refs/heads/main'
+                              token.actions.githubusercontent.com:sub:
+                                - !Sub 'repo:Doist/${ServiceName}:ref:refs/heads/main'
+                                - !Sub 'repo:todoist/${ServiceName}:ref:refs/heads/main'
                               token.actions.githubusercontent.com:aud: 'sts.amazonaws.com'
             Policies:
                 - PolicyName: deployment-permissions
