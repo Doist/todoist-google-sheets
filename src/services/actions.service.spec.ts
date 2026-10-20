@@ -266,7 +266,7 @@ describe('ActionsService', () => {
                     buildSyncTask({
                         overrides: {
                             project_id: '1234',
-                            completed_at: '2022-08-08T10:00:00.000Z',
+                            completed_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
                         },
                     }),
                 )
