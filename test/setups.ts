@@ -10,6 +10,7 @@ import { UserDatabaseService } from '../src/services/user-database.service'
 import { buildTask } from './fixtures'
 import { server } from './server'
 
+import type { Section } from '@doist/todoist-api-typescript'
 import type { User } from '../src/entities/user.entity'
 import type { SyncTask } from '../src/services/todoist.service'
 
@@ -32,6 +33,13 @@ export function setupGetTasks() {
     jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
         Promise.resolve({ results: [buildTask()], nextCursor: null }),
     )
+}
+
+export function setupGetSections(sections: Section[] = []) {
+    jest.spyOn(TodoistApi.prototype, 'getSections').mockResolvedValue({
+        results: sections,
+        nextCursor: null,
+    })
 }
 
 export function setupGetCompletedItems(items: SyncTask[]) {

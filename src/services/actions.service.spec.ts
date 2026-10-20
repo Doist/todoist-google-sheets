@@ -13,6 +13,7 @@ import {
     setupGetAppToken,
     setupGetCompletedItems,
     setupGetGoogleToken,
+    setupGetSections,
     setupGetTasks,
     setupGetUser,
 } from '../../test/setups'
@@ -242,6 +243,7 @@ describe('ActionsService', () => {
                 setupGetUser(buildUser())
                 setupGetGoogleToken('kwijibo')
                 setupGetAppToken('kwijibo')
+                setupGetSections()
 
                 const activeTasks = Array.from({ length: 24 }, (_, index) =>
                     buildTask({
@@ -339,6 +341,7 @@ describe('ActionsService', () => {
             setupGetUser(buildUser())
             setupGetGoogleToken('kwijibo')
             setupGetAppToken('kwijibo')
+            setupGetSections()
 
             const parentTask = {
                 id: 'parent1',
@@ -498,6 +501,7 @@ describe('ActionsService', () => {
             setupGetUser(buildUser())
             setupGetGoogleToken('kwijibo')
             setupGetAppToken('kwijibo')
+            setupGetSections()
 
             const parentTask = {
                 id: 'parent1',
