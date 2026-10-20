@@ -36,13 +36,18 @@ export function setupGetTasks() {
 
 export function setupGetCompletedItems(items: SyncTask[]) {
     const requests: URLSearchParams[] = []
+    const concurrency = { current: 0, max: 0 }
 
     server.use(
         rest.get(
             'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-            (req, res, ctx) => {
+            async (req, res, ctx) => {
                 const params = req.url.searchParams
                 requests.push(params)
+                concurrency.current++
+                concurrency.max = Math.max(concurrency.max, concurrency.current)
+                await new Promise((resolve) => setTimeout(resolve, 1))
+                concurrency.current--
 
                 const since = new Date(params.get('since') ?? '').getTime()
                 const until = new Date(params.get('until') ?? '').getTime()
@@ -60,5 +65,5 @@ export function setupGetCompletedItems(items: SyncTask[]) {
         ),
     )
 
-    return requests
+    return Object.assign(requests, { maxConcurrency: () => concurrency.max })
 }

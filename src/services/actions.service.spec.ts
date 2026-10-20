@@ -310,9 +310,11 @@ describe('ActionsService', () => {
                           }))
                         : [],
                 )
-                if (!includeCompleted) {
-                    expect(completedRequests).toHaveLength(0)
-                }
+                const windowCount = Math.ceil(
+                    (Date.now() - new Date('2006-01-01T00:00:00Z').getTime()) /
+                        (90 * 24 * 60 * 60 * 1000),
+                )
+                expect(completedRequests).toHaveLength(includeCompleted ? windowCount : 0)
             },
         )
 
@@ -367,7 +369,8 @@ describe('ActionsService', () => {
                 .slice(1)
                 .map((row) => row.split(DELIMITER)[0])
 
-            expect(ids).toEqual(expect.arrayContaining([parent.id, subtask.id]))
+            expect(ids.filter((id) => id === parent.id)).toHaveLength(1)
+            expect(ids.filter((id) => id === subtask.id)).toHaveLength(1)
         })
 
         it('passes the correct data through to google sheets service', async () => {

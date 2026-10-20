@@ -48,6 +48,8 @@ describe('TodoistService', () => {
 
             expect(result).toEqual([])
             expect(windows).toHaveLength(85)
+            expect(requests.maxConcurrency()).toBeLessThanOrEqual(20)
+            expect(requests.maxConcurrency()).toBeGreaterThan(1)
             expect(windows[0]?.until).toBe(now)
             expect(windows[84]?.since).toBe('2006-01-01T00:00:00.000Z')
             for (const [index, window] of windows.entries()) {
