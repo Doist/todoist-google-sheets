@@ -2,6 +2,7 @@ import { Section, TodoistApi, User } from '@doist/todoist-api-typescript'
 
 import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
+import { isAxiosError } from 'axios'
 import { lastValueFrom } from 'rxjs'
 
 import type { Task } from '../types'
@@ -25,6 +26,22 @@ const EARLIEST_DATE = new Date('2006-01-01T00:00:00Z')
  * Number of date windows fetched in parallel when scanning a project's completed tasks.
  */
 const WINDOW_CONCURRENCY = 20
+
+/**
+ * Number of times a failed completed-tasks request is retried.
+ */
+const MAX_RETRIES = 1
+
+/**
+ * Wait before a retry when the API doesn't send `retry_after`, in milliseconds.
+ */
+const DEFAULT_RETRY_DELAY_MS = 1000
+
+/**
+ * Longest wait before a retry, in milliseconds. The export has to finish within the UI
+ * extension deadline, so a longer `retry_after` isn't worth honouring.
+ */
+const MAX_RETRY_DELAY_MS = 5000
 
 type SyncDue = {
     date: string
@@ -64,6 +81,26 @@ export type SyncTask = {
 type CompletedTasksResponse = {
     items: SyncTask[]
     next_cursor?: string | null
+}
+
+/**
+ * Whether a failed request is worth retrying: rate limited (429) or a server error (5xx).
+ */
+function isRetryableError(error: unknown): boolean {
+    const status = isAxiosError(error) ? error.response?.status : undefined
+    return status === 429 || (status !== undefined && status >= 500)
+}
+
+/**
+ * How long to wait before retrying a failed request, honouring the API's `retry_after`
+ * (in seconds) up to MAX_RETRY_DELAY_MS.
+ */
+function getRetryDelayMs(error: unknown): number {
+    const retryAfter = isAxiosError<{ retry_after?: unknown }>(error)
+        ? Number(error.response?.data.retry_after ?? error.response?.headers['retry-after'])
+        : NaN
+    const delayMs = retryAfter > 0 ? retryAfter * 1000 : DEFAULT_RETRY_DELAY_MS
+    return Math.min(delayMs, MAX_RETRY_DELAY_MS)
 }
 
 @Injectable()
@@ -240,25 +277,46 @@ export class TodoistService {
         cursor: string | null
     }): Promise<{ items: SyncTask[]; nextCursor: string | null }> {
         const { token, since, until, projectId, cursor } = params
-        const response = await lastValueFrom(
-            this.httpService.get<CompletedTasksResponse>(
-                'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                {
-                    headers: { Authorization: `Bearer ${token}` },
-                    params: {
-                        limit: LIMIT,
-                        since,
-                        until,
-                        project_id: projectId,
-                        ...(cursor ? { cursor } : {}),
+        const response = await this.withRetry(() =>
+            lastValueFrom(
+                this.httpService.get<CompletedTasksResponse>(
+                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                    {
+                        headers: { Authorization: `Bearer ${token}` },
+                        params: {
+                            limit: LIMIT,
+                            since,
+                            until,
+                            project_id: projectId,
+                            ...(cursor ? { cursor } : {}),
+                        },
                     },
-                },
+                ),
             ),
         )
 
         return {
             items: response.data.items,
             nextCursor: response.data.next_cursor ?? null,
+        }
+    }
+
+    private async withRetry<T>(request: () => Promise<T>): Promise<T> {
+        for (let attempt = 0; ; attempt++) {
+            try {
+                return await request()
+            } catch (error: unknown) {
+                if (attempt >= MAX_RETRIES || !isRetryableError(error)) {
+                    throw error
+                }
+
+                const delayMs = getRetryDelayMs(error)
+                this.logger.warn('Retrying failed completed tasks request', {
+                    status: isAxiosError(error) ? error.response?.status : undefined,
+                    delayMs,
+                })
+                await new Promise((resolve) => setTimeout(resolve, delayMs))
+            }
         }
     }
 
