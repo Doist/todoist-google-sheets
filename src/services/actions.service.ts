@@ -17,12 +17,10 @@ import {
 } from '@doist/ui-extensions-server'
 
 import { BadRequestException, Injectable } from '@nestjs/common'
-import { uniqBy } from 'lodash'
 
 import { exportEvent } from '../analytics/events'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
 import { Sheets } from '../i18n/en'
-import { batchExecute, ConcurrencyLimiter, createConcurrencyLimiter } from '../utils/batch-helpers'
 import { convertTasksToCsvString } from '../utils/csv-helpers'
 import { getExportOptions } from '../utils/input-helpers'
 
@@ -31,18 +29,12 @@ import { GoogleSheetsService } from './google-sheets.service'
 import { TodoistService } from './todoist.service'
 import { UserDatabaseService } from './user-database.service'
 
-import type { Section } from '@doist/todoist-api-typescript'
 import type {
     DoistCardRequest,
     DoistCardResponse,
     TodoistContextMenuData,
 } from '@doist/ui-extensions-core'
 import type { ExportOptionsToUse, Task } from '../types'
-
-/**
- * Maximum number of completed-task requests in flight at once during a single export.
- */
-const MAX_CONCURRENT_COMPLETED_TASK_REQUESTS = 20
 
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
@@ -229,7 +221,7 @@ export class ActionsService extends ActionsServiceBase {
                 token: appToken,
                 projectId: contextData.sourceId,
             }),
-            exportOptions['section'] || exportOptions.includeCompleted
+            exportOptions['section']
                 ? this.todoistService.getProjectSections({
                       token: appToken,
                       projectId: contextData.sourceId,
@@ -245,11 +237,9 @@ export class ActionsService extends ActionsServiceBase {
 
         let completedTasks: Task[] = []
         if (exportOptions.includeCompleted) {
-            completedTasks = await this.fetchCompletedTasksForProject({
-                appToken,
+            completedTasks = await this.todoistService.getCompletedTasks({
+                token: appToken,
                 projectId: contextData.sourceId,
-                tasks,
-                sections,
             })
         }
 
@@ -258,125 +248,6 @@ export class ActionsService extends ActionsServiceBase {
             sections,
             collaborators,
         }
-    }
-
-    private async fetchCompletedTasksForProject(params: {
-        appToken: string
-        projectId: string
-        tasks: Task[]
-        sections: Section[]
-    }): Promise<Task[]> {
-        const { appToken, projectId, tasks, sections } = params
-        const limit = createConcurrencyLimiter(MAX_CONCURRENT_COMPLETED_TASK_REQUESTS)
-
-        const syncedCompletedInfo = await this.todoistService.getCompletedInfo({ token: appToken })
-        const completedInfo = syncedCompletedInfo ?? []
-
-        const projectExpectedCount = syncedCompletedInfo
-            ? completedInfo.find((info) => info.project_id === projectId)?.completed_items ?? 0
-            : undefined
-
-        const projectCompletedTasks = await this.todoistService.getCompletedTasks({
-            token: appToken,
-            projectId,
-            expectedCount: projectExpectedCount,
-            limit,
-        })
-
-        const taskIdsWithCompletedSubtasks = this.findIdsWithCompletedChildren(
-            completedInfo,
-            tasks.map((t) => t.id),
-            'item_id',
-        )
-        const sectionIdsWithCompletedTasks = this.findIdsWithCompletedChildren(
-            completedInfo,
-            sections.map((s) => s.id),
-            'section_id',
-        )
-
-        const [taskCompletedTasks, sectionCompletedTasks] = await Promise.all([
-            this.fetchCompletedTasksForIds(appToken, taskIdsWithCompletedSubtasks, 'taskId', limit),
-            this.fetchCompletedTasksForIds(
-                appToken,
-                sectionIdsWithCompletedTasks,
-                'sectionId',
-                limit,
-            ),
-        ])
-
-        let allCompletedTasks = [
-            ...projectCompletedTasks,
-            ...taskCompletedTasks,
-            ...sectionCompletedTasks,
-        ]
-
-        let completedTasksWithChildren = this.findIdsWithCompletedChildren(
-            completedInfo,
-            allCompletedTasks.map((t) => t.id),
-            'item_id',
-        )
-
-        while (completedTasksWithChildren.size > 0) {
-            const subtaskResults = await this.fetchCompletedTasksForIds(
-                appToken,
-                completedTasksWithChildren,
-                'taskId',
-                limit,
-            )
-
-            allCompletedTasks = [...allCompletedTasks, ...subtaskResults]
-
-            completedTasksWithChildren = this.findIdsWithCompletedChildren(
-                completedInfo,
-                subtaskResults.map((t) => t.id),
-                'item_id',
-            )
-        }
-
-        return uniqBy(allCompletedTasks, 'id')
-    }
-
-    private async fetchCompletedTasksForIds(
-        appToken: string,
-        idsWithCounts: Map<string, number>,
-        idType: 'taskId' | 'sectionId',
-        limit: ConcurrencyLimiter,
-    ): Promise<Task[]> {
-        if (idsWithCounts.size === 0) {
-            return []
-        }
-
-        const results = await batchExecute(
-            Array.from(idsWithCounts.entries()),
-            ([id, expectedCount]) =>
-                this.todoistService.getCompletedTasks({
-                    token: appToken,
-                    [idType]: id,
-                    expectedCount,
-                    limit,
-                }),
-            10,
-        )
-
-        return results.flat()
-    }
-
-    private findIdsWithCompletedChildren(
-        completedInfo: { item_id?: string; section_id?: string; completed_items: number }[],
-        entityIds: string[],
-        infoKey: 'item_id' | 'section_id',
-    ): Map<string, number> {
-        const result = new Map<string, number>()
-        const entityIdSet = new Set(entityIds)
-
-        for (const info of completedInfo) {
-            const id = info[infoKey]
-            if (id && entityIdSet.has(id) && info.completed_items > 0) {
-                result.set(id, info.completed_items)
-            }
-        }
-
-        return result
     }
 
     private createSheetName(projectName: string): string {

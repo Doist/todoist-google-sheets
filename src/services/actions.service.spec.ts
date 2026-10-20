@@ -1,19 +1,17 @@
-import { Section, Task, TodoistApi } from '@doist/todoist-api-typescript'
+import { TodoistApi } from '@doist/todoist-api-typescript'
 import { CoreModule, StateService } from '@doist/ui-extensions-server'
 
 import { HttpModule } from '@nestjs/axios'
 import { Test } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import MockDate from 'mockdate'
-import { rest } from 'msw'
 
-import { buildSection, buildSyncTask, buildTask, buildUser } from '../../test/fixtures'
+import { buildSyncTask, buildTask, buildUser } from '../../test/fixtures'
 import { server } from '../../test/server'
 import {
     setupGetAppToken,
     setupGetCompletedItems,
     setupGetGoogleToken,
-    setupGetSections,
     setupGetTasks,
     setupGetUser,
 } from '../../test/setups'
@@ -234,17 +232,15 @@ describe('ActionsService', () => {
         })
 
         it.each([
-            { includeCompleted: true, recentCount: 0, rowCount: 29, syncFails: false },
-            { includeCompleted: true, recentCount: 3, rowCount: 32, syncFails: false },
-            { includeCompleted: true, recentCount: 0, rowCount: 29, syncFails: true },
-            { includeCompleted: false, recentCount: 3, rowCount: 24, syncFails: false },
+            { includeCompleted: true, recentCount: 0, rowCount: 29 },
+            { includeCompleted: true, recentCount: 3, rowCount: 32 },
+            { includeCompleted: false, recentCount: 3, rowCount: 24 },
         ])(
-            'exports $rowCount rows (includeCompleted=$includeCompleted, recent=$recentCount, syncFails=$syncFails)',
-            async ({ includeCompleted, recentCount, rowCount, syncFails }) => {
+            'exports $rowCount rows (includeCompleted=$includeCompleted, recent=$recentCount)',
+            async ({ includeCompleted, recentCount, rowCount }) => {
                 setupGetUser(buildUser())
                 setupGetGoogleToken('kwijibo')
                 setupGetAppToken('kwijibo')
-                setupGetSections()
 
                 const activeTasks = Array.from({ length: 24 }, (_, index) =>
                     buildTask({
@@ -273,26 +269,6 @@ describe('ActionsService', () => {
                 )
                 const completedTasks = [...recentTasks, ...oldTasks]
                 const completedRequests = setupGetCompletedItems(completedTasks)
-                let syncRequests = 0
-                server.use(
-                    rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) => {
-                        syncRequests++
-                        if (syncFails) {
-                            return res(ctx.status(500))
-                        }
-                        return res(
-                            ctx.json({
-                                completed_info: [
-                                    {
-                                        project_id: '1234',
-                                        completed_items: completedTasks.length,
-                                    },
-                                ],
-                            }),
-                        )
-                    }),
-                )
-
                 const exportToSheets = jest
                     .spyOn(target['googleSheetsService'], 'exportToSheets')
                     .mockResolvedValue('https://docs.google.com')
@@ -336,98 +312,30 @@ describe('ActionsService', () => {
                 )
                 if (!includeCompleted) {
                     expect(completedRequests).toHaveLength(0)
-                    expect(syncRequests).toBe(0)
                 }
             },
         )
 
-        it('exports nested completed tasks when the project has no completed_info entry', async () => {
+        it('exports subtasks completed before their completed parent', async () => {
             setupGetUser(buildUser())
             setupGetGoogleToken('kwijibo')
             setupGetAppToken('kwijibo')
             setupGetTasks()
-            setupGetSections()
 
-            const subtask = buildSyncTask({
+            const parent = buildSyncTask({
                 overrides: {
                     project_id: '1234',
-                    parent_id: 'completed-parent',
                     completed_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
                 },
             })
-            setupGetCompletedItems([subtask])
-            server.use(
-                rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) =>
-                    res(ctx.json({ completed_info: [] })),
-                ),
-            )
-
-            const exportToSheets = jest
-                .spyOn(target['googleSheetsService'], 'exportToSheets')
-                .mockResolvedValue('https://docs.google.com')
-
-            await target.export({
-                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
-                action: {
-                    actionType: 'submit',
-                    actionId: SheetCardActions.Export,
-                    params: {
-                        source: 'project',
-                        sourceId: '1234',
-                        url: 'https://google.com',
-                        content: 'My Project',
-                        contentPlain: 'My Project',
-                    } as ContextMenuData,
-                    inputs: {
-                        [Inputs.IncludeCompleted]: 'true',
-                    },
-                },
-                extensionType: 'context-menu',
-                maximumDoistCardVersion: 0.5,
-            })
-
-            const csvData = exportToSheets.mock.calls[0]?.[0].csvData ?? ''
-            const ids = csvData
-                .split('\n')
-                .slice(1)
-                .map((row) => row.split(DELIMITER)[0])
-
-            expect(ids).toContain(subtask.id)
-        })
-
-        it('exports a completed task returned by both project and section queries once', async () => {
-            setupGetUser(buildUser())
-            setupGetGoogleToken('kwijibo')
-            setupGetAppToken('kwijibo')
-            setupGetTasks()
-
-            const section = buildSection({ overrides: { projectId: '1234' } })
-            setupGetSections([section])
-
-            const completedAt = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-            const rootTask = buildSyncTask({
-                overrides: { project_id: '1234', completed_at: completedAt },
-            })
-            const sectionTask = buildSyncTask({
+            const subtask = buildSyncTask({
                 overrides: {
                     project_id: '1234',
-                    section_id: section.id,
-                    completed_at: completedAt,
+                    parent_id: parent.id,
+                    completed_at: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000).toISOString(),
                 },
             })
-            setupGetCompletedItems([rootTask, sectionTask])
-            server.use(
-                rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) =>
-                    res(
-                        ctx.json({
-                            completed_info: [
-                                { project_id: '1234', completed_items: 1 },
-                                { section_id: section.id, completed_items: 1 },
-                            ],
-                        }),
-                    ),
-                ),
-            )
+            setupGetCompletedItems([parent, subtask])
 
             const exportToSheets = jest
                 .spyOn(target['googleSheetsService'], 'exportToSheets')
@@ -459,265 +367,7 @@ describe('ActionsService', () => {
                 .slice(1)
                 .map((row) => row.split(DELIMITER)[0])
 
-            expect(ids.filter((id) => id === rootTask.id)).toHaveLength(1)
-            expect(ids.filter((id) => id === sectionTask.id)).toHaveLength(1)
-        })
-
-        it('fetches completed tasks for tasks with completed subtasks', async () => {
-            setupGetUser(buildUser())
-            setupGetGoogleToken('kwijibo')
-            setupGetAppToken('kwijibo')
-            setupGetSections()
-
-            const parentTask = {
-                id: 'parent1',
-                projectId: '1234',
-                content: 'Parent Task',
-                isCompleted: false,
-            } as Task
-
-            jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
-                Promise.resolve({ results: [parentTask], nextCursor: null }),
-            )
-
-            // completed_info from sync API tells us parent1 has completed subtasks
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([{ item_id: 'parent1', completed_items: 2 }]),
-            )
-
-            const completedSubtasks = [
-                {
-                    id: 'sub1',
-                    projectId: '1234',
-                    content: 'Subtask 1',
-                    description: '',
-                    isCompleted: true,
-                },
-                {
-                    id: 'sub2',
-                    projectId: '1234',
-                    content: 'Subtask 2',
-                    description: '',
-                    isCompleted: true,
-                },
-            ] as Task[]
-
-            const getCompletedTasks = jest
-                .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(({ projectId, taskId }) => {
-                    if (projectId === '1234') {
-                        return Promise.resolve([])
-                    }
-                    if (taskId === 'parent1') {
-                        return Promise.resolve(completedSubtasks)
-                    }
-                    return Promise.resolve([])
-                })
-
-            jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
-                Promise.resolve('https://docs.google.com'),
-            )
-
-            await target.export({
-                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
-                action: {
-                    actionType: 'submit',
-                    actionId: SheetCardActions.Export,
-                    params: {
-                        source: 'project',
-                        sourceId: '1234',
-                        url: 'https://google.com',
-                        content: 'My Project',
-                        contentPlain: 'My Project',
-                    } as ContextMenuData,
-                    inputs: {
-                        [Inputs.IncludeCompleted]: 'true',
-                    },
-                },
-                extensionType: 'context-menu',
-                maximumDoistCardVersion: 0.5,
-            })
-
-            expect(getCompletedTasks).toHaveBeenCalledWith(
-                expect.objectContaining({ taskId: 'parent1' }),
-            )
-        })
-
-        it('fetches completed tasks for sections with completed tasks', async () => {
-            setupGetUser(buildUser())
-            setupGetGoogleToken('kwijibo')
-            setupGetAppToken('kwijibo')
-            setupGetTasks()
-
-            const sections: Section[] = [
-                {
-                    id: 'section1',
-                    projectId: '1234',
-                    name: 'Section 1',
-                    userId: 'user1',
-                    isDeleted: false,
-                    isCollapsed: false,
-                    isArchived: false,
-                    archivedAt: null,
-                    addedAt: '2024-01-01T00:00:00Z',
-                    updatedAt: '2024-01-01T00:00:00Z',
-                    sectionOrder: 1,
-                },
-            ]
-            jest.spyOn(TodoistApi.prototype, 'getSections').mockImplementation(() =>
-                Promise.resolve({ results: sections, nextCursor: null }),
-            )
-
-            // completed_info from sync API tells us section1 has completed tasks
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([{ section_id: 'section1', completed_items: 1 }]),
-            )
-
-            const completedTask = {
-                id: 'task1',
-                projectId: '1234',
-                content: 'Task 1',
-                description: '',
-                isCompleted: true,
-            } as Task
-
-            const getCompletedTasks = jest
-                .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(({ projectId, sectionId }) => {
-                    if (projectId === '1234') {
-                        return Promise.resolve([])
-                    }
-                    if (sectionId === 'section1') {
-                        return Promise.resolve([completedTask])
-                    }
-                    return Promise.resolve([])
-                })
-
-            jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
-                Promise.resolve('https://docs.google.com'),
-            )
-
-            await target.export({
-                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
-                action: {
-                    actionType: 'submit',
-                    actionId: SheetCardActions.Export,
-                    params: {
-                        source: 'project',
-                        sourceId: '1234',
-                        url: 'https://google.com',
-                        content: 'My Project',
-                        contentPlain: 'My Project',
-                    } as ContextMenuData,
-                    inputs: {
-                        [Inputs.IncludeCompleted]: 'true',
-                        'Input.section': 'true',
-                    },
-                },
-                extensionType: 'context-menu',
-                maximumDoistCardVersion: 0.5,
-            })
-
-            expect(getCompletedTasks).toHaveBeenCalledWith(
-                expect.objectContaining({ sectionId: 'section1' }),
-            )
-        })
-
-        it('recursively fetches completed subtasks of completed tasks', async () => {
-            setupGetUser(buildUser())
-            setupGetGoogleToken('kwijibo')
-            setupGetAppToken('kwijibo')
-            setupGetSections()
-
-            const parentTask = {
-                id: 'parent1',
-                projectId: '1234',
-                content: 'Parent Task',
-                description: '',
-                isCompleted: false,
-            } as Task
-            jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
-                Promise.resolve({ results: [parentTask], nextCursor: null }),
-            )
-
-            // completed_info from sync API tells us about the full hierarchy:
-            // parent1 has completed subtasks, and sub1 also has completed subtasks
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([
-                    { item_id: 'parent1', completed_items: 2 },
-                    { item_id: 'sub1', completed_items: 1 },
-                ]),
-            )
-
-            const completedSubtasks = [
-                {
-                    id: 'sub1',
-                    projectId: '1234',
-                    content: 'Subtask 1',
-                    description: '',
-                    isCompleted: true,
-                },
-            ] as Task[]
-
-            const completedSubSubtasks = [
-                {
-                    id: 'subsub1',
-                    projectId: '1234',
-                    content: 'Sub-subtask 1',
-                    description: '',
-                    isCompleted: true,
-                },
-            ] as Task[]
-
-            const getCompletedTasks = jest
-                .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(({ projectId, taskId }) => {
-                    if (projectId === '1234') {
-                        return Promise.resolve([])
-                    }
-                    if (taskId === 'parent1') {
-                        return Promise.resolve(completedSubtasks)
-                    }
-                    if (taskId === 'sub1') {
-                        return Promise.resolve(completedSubSubtasks)
-                    }
-                    return Promise.resolve([])
-                })
-
-            jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
-                Promise.resolve('https://docs.google.com'),
-            )
-
-            await target.export({
-                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
-                action: {
-                    actionType: 'submit',
-                    actionId: SheetCardActions.Export,
-                    params: {
-                        source: 'project',
-                        sourceId: '1234',
-                        url: 'https://google.com',
-                        content: 'My Project',
-                        contentPlain: 'My Project',
-                    } as ContextMenuData,
-                    inputs: {
-                        [Inputs.IncludeCompleted]: 'true',
-                    },
-                },
-                extensionType: 'context-menu',
-                maximumDoistCardVersion: 0.5,
-            })
-
-            expect(getCompletedTasks).toHaveBeenCalledWith(
-                expect.objectContaining({ projectId: '1234' }),
-            )
-            expect(getCompletedTasks).toHaveBeenCalledWith(
-                expect.objectContaining({ taskId: 'parent1' }),
-            )
-            expect(getCompletedTasks).toHaveBeenCalledWith(
-                expect.objectContaining({ taskId: 'sub1' }),
-            )
-            expect(getCompletedTasks).toHaveBeenCalledTimes(3)
+            expect(ids).toEqual(expect.arrayContaining([parent.id, subtask.id]))
         })
 
         it('passes the correct data through to google sheets service', async () => {

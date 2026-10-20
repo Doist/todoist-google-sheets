@@ -5,7 +5,6 @@ import { Injectable, Logger } from '@nestjs/common'
 import { lastValueFrom } from 'rxjs'
 
 import type { Task } from '../types'
-import type { ConcurrencyLimiter } from '../utils/batch-helpers'
 
 const LIMIT = 100
 
@@ -23,10 +22,9 @@ const MAX_WINDOW_DAYS = 90
 const EARLIEST_DATE = new Date('2006-01-01T00:00:00Z')
 
 /**
- * Number of date windows fetched in parallel after the first one. The first window is fetched
- * alone because recent completions often satisfy the expected count straight away.
+ * Number of date windows fetched in parallel when scanning a project's completed tasks.
  */
-const WINDOW_CONCURRENCY = 5
+const WINDOW_CONCURRENCY = 20
 
 type SyncDue = {
     date: string
@@ -63,42 +61,9 @@ export type SyncTask = {
     duration: null
 }
 
-export type CompletedInfo = {
-    item_id?: string
-    project_id?: string
-    section_id?: string
-    completed_items: number
-}
-
 type CompletedTasksResponse = {
     items: SyncTask[]
     next_cursor?: string | null
-}
-
-/**
- * Whether a completed task sits directly in the queried container, matching how completed_info
- * counts it: under its parent task, else its section, else its project.
- */
-function isDirectChild(
-    item: SyncTask,
-    { taskId, sectionId }: { taskId?: string; sectionId?: string },
-): boolean {
-    if (taskId) {
-        return true
-    }
-
-    if (item.parent_id) {
-        return false
-    }
-
-    return Boolean(sectionId) || !item.section_id
-}
-
-/**
- * Limiter that runs every request straight away, for callers that don't share a limit.
- */
-function runImmediately<T>(fn: () => Promise<T>): Promise<T> {
-    return fn()
 }
 
 @Injectable()
@@ -161,34 +126,17 @@ export class TodoistService {
     async getCompletedTasks({
         projectId,
         token,
-        taskId,
-        sectionId,
-        expectedCount,
-        limit = runImmediately,
     }: {
         token: string
-        projectId?: string
-        taskId?: string
-        sectionId?: string
-        expectedCount?: number
-        limit?: ConcurrencyLimiter
+        projectId: string
     }): Promise<Task[]> {
         try {
-            const items = await this.getCompletedTasksInternal({
-                token,
-                projectId,
-                taskId,
-                sectionId,
-                expectedCount,
-                limit,
-            })
+            const items = await this.getCompletedTasksInternal({ token, projectId })
 
             return items.map((task) => this.getTaskFromQuickAddResponse(task))
         } catch (error: unknown) {
             this.logger.error('Failed to fetch completed tasks', {
                 projectId,
-                taskId,
-                sectionId,
                 error: error instanceof Error ? error.message : error,
             })
             return []
@@ -196,105 +144,36 @@ export class TodoistService {
     }
 
     /**
-     * Fetches completed_info from the Todoist Sync API (v1).
+     * Fetches all completed tasks in a project using the documented Todoist API v1 endpoint.
      *
-     * completed_info indicates the number of completed items within each
-     * active project, section, or parent item. This is used to determine
-     * which tasks and sections have completed children that need to be
-     * fetched separately.
-     *
-     * Entries with zero completed items are omitted by the API. Returns `null` when the request
-     * fails, so callers can tell an unknown count from a zero count.
-     *
-     * @see https://developer.todoist.com/api/v1/#tag/Sync/Overview/Read-resources
-     */
-    async getCompletedInfo({ token }: { token: string }): Promise<CompletedInfo[] | null> {
-        try {
-            const response = await lastValueFrom(
-                this.httpService.post<{ completed_info: CompletedInfo[] }>(
-                    'https://api.todoist.com/api/v1/sync',
-                    { sync_token: '*', resource_types: '["completed_info"]' },
-                    { headers: { Authorization: `Bearer ${token}` } },
-                ),
-            )
-
-            return response.data.completed_info
-        } catch (error: unknown) {
-            this.logger.error('Failed to fetch completed_info from Sync API', {
-                error: error instanceof Error ? error.message : error,
-            })
-            return null
-        }
-    }
-
-    /**
-     * Fetches completed tasks using the documented Todoist API v1 endpoint.
-     *
-     * The by_completion_date endpoint enforces a maximum date range of 3 months,
-     * so we walk backwards from today in 90-day windows until EARLIEST_DATE, fetching up to
-     * WINDOW_CONCURRENCY windows in parallel after the first one. Every request runs through
-     * `limit`, so callers can cap concurrent requests across several scans.
-     * We terminate early once we've collected at least `expectedCount` items
-     * (from completed_info). Empty windows do not prove that older tasks don't
-     * exist, so an unavailable or unmet count requires scanning the full history.
-     *
-     * completed_info counts each task under its direct container only (parent task, else
-     * section, else project), while project and section queries also return nested tasks.
-     * Only tasks directly in the queried container count towards `expectedCount`.
+     * The by_completion_date endpoint enforces a maximum date range of 3 months, so we scan the
+     * whole history back to EARLIEST_DATE in 90-day windows, WINDOW_CONCURRENCY at a time. The
+     * project query returns every completed task in the project, including tasks in sections
+     * and subtasks. Empty windows don't prove that older tasks don't exist, so the scan never
+     * stops early.
      *
      * @see https://developer.todoist.com/api/v1/#tag/Tasks/operation/getTasks_Completed_By_Completion_Date
      */
     private async getCompletedTasksInternal({
         projectId,
         token,
-        taskId,
-        sectionId,
-        expectedCount,
-        limit = runImmediately,
     }: {
         token: string
-        projectId?: string
-        taskId?: string
-        sectionId?: string
-        expectedCount?: number
-        limit?: ConcurrencyLimiter
+        projectId: string
     }): Promise<SyncTask[]> {
-        const allItems: SyncTask[] = []
-        let countedItems = 0
-
         const windows = Array.from(this.generateDateWindows())
-        let start = 0
-        let batchSize = 1
+        const allItems: SyncTask[] = []
 
-        while (start < windows.length) {
-            const batch = windows.slice(start, start + batchSize)
+        for (let start = 0; start < windows.length; start += WINDOW_CONCURRENCY) {
             const batchItems = await Promise.all(
-                batch.map(({ since, until }) =>
-                    this.fetchCompletedTasksForWindow({
-                        token,
-                        since,
-                        until,
-                        projectId,
-                        taskId,
-                        sectionId,
-                        limit,
-                    }),
-                ),
+                windows
+                    .slice(start, start + WINDOW_CONCURRENCY)
+                    .map(({ since, until }) =>
+                        this.fetchCompletedTasksForWindow({ token, since, until, projectId }),
+                    ),
             )
 
-            for (const windowItems of batchItems) {
-                allItems.push(...windowItems)
-                countedItems += windowItems.filter((item) =>
-                    isDirectChild(item, { taskId, sectionId }),
-                ).length
-            }
-
-            if (expectedCount !== undefined && countedItems >= expectedCount) {
-                break
-            }
-
-            start += batch.length
-            batchSize = WINDOW_CONCURRENCY
+            allItems.push(...batchItems.flat())
         }
 
         return allItems
@@ -327,34 +206,24 @@ export class TodoistService {
         since,
         until,
         projectId,
-        taskId,
-        sectionId,
-        limit,
     }: {
         token: string
         since: string
         until: string
-        projectId?: string
-        taskId?: string
-        sectionId?: string
-        limit: ConcurrencyLimiter
+        projectId: string
     }): Promise<SyncTask[]> {
         const windowItems: SyncTask[] = []
         let nextCursor: string | null = null
 
         do {
-            const cursor = nextCursor
-            const data: { items: SyncTask[]; nextCursor: string | null } = await limit(() =>
-                this.fetchCompletedTasksPage({
+            const data: { items: SyncTask[]; nextCursor: string | null } =
+                await this.fetchCompletedTasksPage({
                     token,
                     since,
                     until,
                     projectId,
-                    taskId,
-                    sectionId,
-                    cursor,
-                }),
-            )
+                    cursor: nextCursor,
+                })
 
             windowItems.push(...data.items)
             nextCursor = data.nextCursor
@@ -367,12 +236,10 @@ export class TodoistService {
         token: string
         since: string
         until: string
-        projectId?: string
-        taskId?: string
-        sectionId?: string
+        projectId: string
         cursor: string | null
     }): Promise<{ items: SyncTask[]; nextCursor: string | null }> {
-        const { token, since, until, projectId, taskId, sectionId, cursor } = params
+        const { token, since, until, projectId, cursor } = params
         const response = await lastValueFrom(
             this.httpService.get<CompletedTasksResponse>(
                 'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
@@ -382,9 +249,7 @@ export class TodoistService {
                         limit: LIMIT,
                         since,
                         until,
-                        ...(projectId ? { project_id: projectId } : {}),
-                        ...(taskId ? { parent_id: taskId } : {}),
-                        ...(sectionId ? { section_id: sectionId } : {}),
+                        project_id: projectId,
                         ...(cursor ? { cursor } : {}),
                     },
                 },

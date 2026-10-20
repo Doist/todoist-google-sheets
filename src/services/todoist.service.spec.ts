@@ -32,142 +32,64 @@ describe('TodoistService', () => {
         beforeEach(() => MockDate.set(now))
         afterEach(() => MockDate.reset())
 
-        it('should scan empty history to the lower bound using 90-day windows', async () => {
+        it('should scan the whole project history using 90-day windows', async () => {
             const requests = setupGetCompletedItems([])
             const target = await getTarget()
 
             const result = await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
 
+            const windows = requests
+                .map((params) => ({
+                    since: params.get('since') ?? '',
+                    until: params.get('until') ?? '',
+                    projectId: params.get('project_id'),
+                }))
+                .sort((a, b) => b.since.localeCompare(a.since))
+
             expect(result).toEqual([])
-            expect(requests).toHaveLength(85)
-            expect(requests[0]?.get('until')).toBe(now)
-            expect(requests[84]?.get('since')).toBe('2006-01-01T00:00:00.000Z')
-            for (const params of requests) {
-                const since = new Date(params.get('since') ?? '')
-                const until = new Date(params.get('until') ?? '')
-                const diffDays = (until.getTime() - since.getTime()) / (1000 * 60 * 60 * 24)
+            expect(windows).toHaveLength(85)
+            expect(windows[0]?.until).toBe(now)
+            expect(windows[84]?.since).toBe('2006-01-01T00:00:00.000Z')
+            for (const [index, window] of windows.entries()) {
+                const diffDays =
+                    (new Date(window.until).getTime() - new Date(window.since).getTime()) /
+                    (1000 * 60 * 60 * 24)
                 expect(diffDays).toBeGreaterThan(0)
                 expect(diffDays).toBeLessThanOrEqual(90)
+                expect(window.projectId).toBe('123')
+                if (index > 0) {
+                    expect(window.until).toBe(windows[index - 1]?.since)
+                }
             }
         })
 
-        it.each([
-            {
-                scope: { projectId: '123' },
-                filter: 'project_id',
-                expectedCount: 1,
-                requestCount: 26,
-            },
-            {
-                scope: { taskId: '123' },
-                filter: 'parent_id',
-                expectedCount: undefined,
-                requestCount: 85,
-            },
-            {
-                scope: { sectionId: '123' },
-                filter: 'section_id',
-                expectedCount: 99,
-                requestCount: 85,
-            },
-        ])(
-            'should retrieve old $filter tasks across empty windows with count $expectedCount',
-            async ({ scope, filter, expectedCount, requestCount }) => {
-                const task = buildSyncTask({ overrides: { [filter]: '123' } })
-                const requests = setupGetCompletedItems([task])
-                const target = await getTarget()
-
-                const result = await target.getCompletedTasks({
-                    token: 'kwijibo',
-                    ...scope,
-                    expectedCount,
-                })
-
-                expect(result).toEqual([
-                    expect.objectContaining({ id: task.id, completedAt: task.completed_at }),
-                ])
-                expect(requests).toHaveLength(requestCount)
-                expect(requests[requestCount - 1]?.get(filter)).toBe('123')
-            },
-        )
-
-        it('should stop early when the exact recent count is found', async () => {
-            const tasks = Array.from({ length: 3 }, () =>
+        it('should return tasks completed across inactivity gaps, newest first', async () => {
+            const tasks = [
                 buildSyncTask({ overrides: { completed_at: '2026-10-20T08:00:00.000Z' } }),
-            )
-            const requests = setupGetCompletedItems(tasks)
+                buildSyncTask({
+                    overrides: { parent_id: 'parent', completed_at: '2020-09-25T12:00:00.000Z' },
+                }),
+                buildSyncTask({
+                    overrides: { section_id: 'section', completed_at: '2015-01-01T00:00:00.000Z' },
+                }),
+            ]
+            setupGetCompletedItems(tasks)
             const target = await getTarget()
 
-            const result = await target.getCompletedTasks({
-                projectId: '123',
-                token: 'kwijibo',
-                expectedCount: 3,
-            })
+            const result = await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
 
             expect(result.map((task) => task.id)).toEqual(tasks.map((task) => task.id))
-            expect(requests).toHaveLength(1)
         })
 
-        it.each([
-            {
-                scope: { projectId: '123' },
-                nested: [{ section_id: '456' }, { parent_id: '789' }],
-                requestCount: 26,
-            },
-            {
-                scope: { sectionId: '456' },
-                nested: [{ section_id: '456', parent_id: '789' }],
-                requestCount: 26,
-            },
-            {
-                scope: { taskId: '789' },
-                nested: [{ parent_id: '789' }],
-                requestCount: 1,
-            },
-        ])(
-            'should only count direct children towards the expected count for $scope',
-            async ({ scope, nested, requestCount }) => {
-                const recent = '2026-10-20T08:00:00.000Z'
-                const direct = {
-                    section_id: scope.sectionId ?? null,
-                    parent_id: scope.taskId ?? null,
-                }
-                const tasks = [
-                    buildSyncTask({ overrides: { ...direct, completed_at: recent } }),
-                    ...nested.map((overrides) =>
-                        buildSyncTask({ overrides: { ...overrides, completed_at: recent } }),
-                    ),
-                    buildSyncTask({ overrides: direct }),
-                ]
-                const requests = setupGetCompletedItems(tasks)
-                const target = await getTarget()
-
-                const result = await target.getCompletedTasks({
-                    token: 'kwijibo',
-                    ...scope,
-                    expectedCount: 2,
-                })
-
-                expect(requests).toHaveLength(requestCount)
-                expect(result.map((task) => task.id)).toEqual(
-                    tasks.slice(0, requestCount === 1 ? -1 : undefined).map((task) => task.id),
-                )
-            },
-        )
-
-        it('should exhaust cursor pagination in an old window after empty windows', async () => {
+        it('should exhaust cursor pagination in an old window', async () => {
             const tasks = Array.from({ length: 101 }, () => buildSyncTask())
             const requests = setupGetCompletedItems(tasks)
             const target = await getTarget()
 
-            const result = await target.getCompletedTasks({
-                projectId: '123',
-                token: 'kwijibo',
-                expectedCount: 101,
-            })
+            const result = await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
 
             expect(result.map((task) => task.id)).toEqual(tasks.map((task) => task.id))
-            expect(requests).toHaveLength(27)
+            expect(requests).toHaveLength(86)
             expect(requests.map((params) => params.get('cursor')).filter(Boolean)).toEqual(['1'])
         })
 
@@ -187,47 +109,6 @@ describe('TodoistService', () => {
                 token: 'kwijibo',
             })
             expect(result).toEqual([])
-        })
-    })
-
-    describe('getCompletedInfo', () => {
-        it('should fetch completed_info from the v1 sync endpoint', async () => {
-            const completedInfo = [
-                { project_id: '123', completed_items: 5 },
-                { item_id: 'task1', completed_items: 2 },
-            ]
-
-            let capturedBody: Record<string, string> | undefined
-            let capturedAuthHeader: string | undefined
-
-            server.use(
-                rest.post('https://api.todoist.com/api/v1/sync', async (req, res, ctx) => {
-                    capturedBody = await req.json()
-                    capturedAuthHeader = req.headers.get('Authorization') ?? undefined
-                    return res(ctx.json({ completed_info: completedInfo }))
-                }),
-            )
-
-            const target = await getTarget()
-            const result = await target.getCompletedInfo({ token: 'kwijibo' })
-            expect(result).toEqual(completedInfo)
-            expect(capturedAuthHeader).toBe('Bearer kwijibo')
-            expect(capturedBody).toEqual({
-                sync_token: '*',
-                resource_types: '["completed_info"]',
-            })
-        })
-
-        it('should return null when the sync endpoint fails', async () => {
-            server.use(
-                rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) => {
-                    return res(ctx.status(500))
-                }),
-            )
-
-            const target = await getTarget()
-            const result = await target.getCompletedInfo({ token: 'kwijibo' })
-            expect(result).toBeNull()
         })
     })
 
