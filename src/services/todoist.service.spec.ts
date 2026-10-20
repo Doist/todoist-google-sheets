@@ -108,6 +108,53 @@ describe('TodoistService', () => {
             expect(requests).toHaveLength(1)
         })
 
+        it.each([
+            {
+                scope: { projectId: '123' },
+                nested: [{ section_id: '456' }, { parent_id: '789' }],
+                requestCount: 25,
+            },
+            {
+                scope: { sectionId: '456' },
+                nested: [{ section_id: '456', parent_id: '789' }],
+                requestCount: 25,
+            },
+            {
+                scope: { taskId: '789' },
+                nested: [{ parent_id: '789' }],
+                requestCount: 1,
+            },
+        ])(
+            'should only count direct children towards the expected count for $scope',
+            async ({ scope, nested, requestCount }) => {
+                const recent = '2026-10-20T08:00:00.000Z'
+                const direct = {
+                    section_id: scope.sectionId ?? null,
+                    parent_id: scope.taskId ?? null,
+                }
+                const tasks = [
+                    buildSyncTask({ overrides: { ...direct, completed_at: recent } }),
+                    ...nested.map((overrides) =>
+                        buildSyncTask({ overrides: { ...overrides, completed_at: recent } }),
+                    ),
+                    buildSyncTask({ overrides: direct }),
+                ]
+                const requests = setupGetCompletedItems(tasks)
+                const target = await getTarget()
+
+                const result = await target.getCompletedTasks({
+                    token: 'kwijibo',
+                    ...scope,
+                    expectedCount: 2,
+                })
+
+                expect(requests).toHaveLength(requestCount)
+                expect(result.map((task) => task.id)).toEqual(
+                    tasks.slice(0, requestCount === 1 ? -1 : undefined).map((task) => task.id),
+                )
+            },
+        )
+
         it('should exhaust cursor pagination in an old window after empty windows', async () => {
             const tasks = Array.from({ length: 101 }, () => buildSyncTask())
             const requests = setupGetCompletedItems(tasks)
