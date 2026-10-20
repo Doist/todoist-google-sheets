@@ -4,6 +4,7 @@ import { build, perBuild, sequence } from '@jackfranklin/test-data-bot'
 import { User } from '../src/entities/user.entity'
 
 import type { Section, Task, User as Collaborator } from '@doist/todoist-api-typescript'
+import type { SyncTask } from '../src/services/todoist.service'
 import type { ExportOptionsToUse } from '../src/types'
 
 export const buildUser = build<User>('User', {
@@ -55,6 +56,30 @@ export const buildTask = build<Task>('Task', {
         duration: null,
         due: null,
         assignerId: null,
+    },
+})
+
+export const buildSyncTask = build<SyncTask>('SyncTask', {
+    fields: {
+        id: sequence((num) => `completed-${num}`),
+        content: 'Completed task',
+        description: '',
+        added_by_uid: '123',
+        added_at: '2020-09-24T12:00:00.000Z',
+        completed_at: '2020-09-25T12:00:00.000Z',
+        checked: true,
+        child_order: 0,
+        collapsed: false,
+        is_deleted: false,
+        labels: [],
+        parent_id: null,
+        priority: 1,
+        project_id: '123',
+        section_id: '12345',
+        user_id: '123',
+        due: null,
+        deadline: null,
+        duration: null,
     },
 })
 

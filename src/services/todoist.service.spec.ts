@@ -1,11 +1,13 @@
 import { HttpModule } from '@nestjs/axios'
 import { Test } from '@nestjs/testing'
-import { chunk } from 'lodash'
+import MockDate from 'mockdate'
 import { rest } from 'msw'
 
+import { buildSyncTask } from '../../test/fixtures'
 import { server } from '../../test/server'
+import { setupGetCompletedItems } from '../../test/setups'
 
-import { SyncTask, TodoistService } from './todoist.service'
+import { TodoistService } from './todoist.service'
 
 describe('TodoistService', () => {
     beforeAll(() => {
@@ -25,216 +27,103 @@ describe('TodoistService', () => {
     })
 
     describe('getCompletedTasks', () => {
-        it('should call for completed tasks', async () => {
-            setupGetCompletedItems([])
-            const target = await getTarget()
-            const httpServer = jest.spyOn(target['httpService'], 'get')
+        const now = '2026-10-20T09:00:00.000Z'
 
-            const result = await target.getCompletedTasks({
-                projectId: '123',
-                token: 'kwijibo',
-            })
+        beforeEach(() => MockDate.set(now))
+        afterEach(() => MockDate.reset())
+
+        it('should scan empty history to the lower bound using 90-day windows', async () => {
+            const requests = setupGetCompletedItems([])
+            const target = await getTarget()
+
+            const result = await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
+
             expect(result).toEqual([])
-            expect(httpServer).toHaveBeenCalled()
-        })
-
-        it('should fetch completed tasks across date windows', async () => {
-            setupGetCompletedItems([{} as SyncTask, {} as SyncTask])
-            const target = await getTarget()
-
-            const result = await target.getCompletedTasks({
-                projectId: '123',
-                token: 'kwijibo',
-            })
-            expect(result.length).toBeGreaterThanOrEqual(2)
-        })
-
-        it('should send since and until params within 90-day windows', async () => {
-            const capturedParams: URLSearchParams[] = []
-
-            server.use(
-                rest.get(
-                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                    (req, res, ctx) => {
-                        capturedParams.push(req.url.searchParams)
-                        return res(ctx.json({ items: [] }))
-                    },
-                ),
-            )
-
-            const target = await getTarget()
-            await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
-
-            expect(capturedParams.length).toBeGreaterThan(0)
-            for (const params of capturedParams) {
-                const since = new Date(params.get('since')!)
-                const until = new Date(params.get('until')!)
+            expect(requests).toHaveLength(85)
+            expect(requests[0]?.get('until')).toBe(now)
+            expect(requests[84]?.get('since')).toBe('2006-01-01T00:00:00.000Z')
+            for (const params of requests) {
+                const since = new Date(params.get('since') ?? '')
+                const until = new Date(params.get('until') ?? '')
                 const diffDays = (until.getTime() - since.getTime()) / (1000 * 60 * 60 * 24)
+                expect(diffDays).toBeGreaterThan(0)
                 expect(diffDays).toBeLessThanOrEqual(90)
             }
         })
 
-        it('should stop after consecutive empty windows', async () => {
-            let windowCount = 0
+        it.each([
+            {
+                scope: { projectId: '123' },
+                filter: 'project_id',
+                expectedCount: 1,
+                requestCount: 25,
+            },
+            {
+                scope: { taskId: '123' },
+                filter: 'parent_id',
+                expectedCount: undefined,
+                requestCount: 85,
+            },
+            {
+                scope: { sectionId: '123' },
+                filter: 'section_id',
+                expectedCount: 99,
+                requestCount: 85,
+            },
+        ])(
+            'should retrieve old $filter tasks across empty windows with count $expectedCount',
+            async ({ scope, filter, expectedCount, requestCount }) => {
+                const task = buildSyncTask({
+                    overrides: { parent_id: '123', section_id: '123' },
+                })
+                const requests = setupGetCompletedItems([task])
+                const target = await getTarget()
 
-            server.use(
-                rest.get(
-                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                    (_req, res, ctx) => {
-                        windowCount++
-                        return res(ctx.json({ items: [] }))
-                    },
-                ),
+                const result = await target.getCompletedTasks({
+                    token: 'kwijibo',
+                    ...scope,
+                    expectedCount,
+                })
+
+                expect(result).toEqual([
+                    expect.objectContaining({ id: task.id, completedAt: task.completed_at }),
+                ])
+                expect(requests).toHaveLength(requestCount)
+                expect(requests[requestCount - 1]?.get(filter)).toBe('123')
+            },
+        )
+
+        it('should stop early when the exact recent count is found', async () => {
+            const tasks = Array.from({ length: 3 }, () =>
+                buildSyncTask({ overrides: { completed_at: '2026-10-20T08:00:00.000Z' } }),
             )
-
+            const requests = setupGetCompletedItems(tasks)
             const target = await getTarget()
-            await target.getCompletedTasks({ projectId: '123', token: 'kwijibo' })
 
-            // With CONSECUTIVE_EMPTY_WINDOW_THRESHOLD = 2, should stop after 2 empty windows
-            expect(windowCount).toBe(2)
-        })
-
-        it('should stop early when expectedCount items are found', async () => {
-            let windowCount = 0
-
-            server.use(
-                rest.get(
-                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                    (_req, res, ctx) => {
-                        windowCount++
-                        if (windowCount === 1) {
-                            return res(
-                                ctx.json({
-                                    items: [{} as SyncTask, {} as SyncTask, {} as SyncTask],
-                                }),
-                            )
-                        }
-                        return res(ctx.json({ items: [] }))
-                    },
-                ),
-            )
-
-            const target = await getTarget()
             const result = await target.getCompletedTasks({
                 projectId: '123',
                 token: 'kwijibo',
                 expectedCount: 3,
             })
 
-            expect(result).toHaveLength(3)
-            expect(windowCount).toBe(1)
+            expect(result.map((task) => task.id)).toEqual(tasks.map((task) => task.id))
+            expect(requests).toHaveLength(1)
         })
 
-        it('should continue scanning if expectedCount not yet reached', async () => {
-            let windowCount = 0
-
-            server.use(
-                rest.get(
-                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                    (_req, res, ctx) => {
-                        windowCount++
-                        if (windowCount === 1) {
-                            return res(ctx.json({ items: [{} as SyncTask] }))
-                        }
-                        if (windowCount === 2) {
-                            return res(ctx.json({ items: [] }))
-                        }
-                        if (windowCount === 3) {
-                            return res(ctx.json({ items: [{} as SyncTask] }))
-                        }
-                        return res(ctx.json({ items: [] }))
-                    },
-                ),
-            )
-
+        it('should exhaust cursor pagination in an old window after empty windows', async () => {
+            const tasks = Array.from({ length: 101 }, () => buildSyncTask())
+            const requests = setupGetCompletedItems(tasks)
             const target = await getTarget()
+
             const result = await target.getCompletedTasks({
                 projectId: '123',
                 token: 'kwijibo',
-                expectedCount: 2,
+                expectedCount: 101,
             })
 
-            expect(result).toHaveLength(2)
-            expect(windowCount).toBe(3)
-        })
-
-        it('should reset consecutive empty counter when items are found', async () => {
-            let windowCount = 0
-
-            server.use(
-                rest.get(
-                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                    (_req, res, ctx) => {
-                        windowCount++
-                        // Window 1: items found
-                        if (windowCount === 1) {
-                            return res(ctx.json({ items: [{} as SyncTask] }))
-                        }
-                        // Window 2: empty (consecutive = 1)
-                        if (windowCount === 2) {
-                            return res(ctx.json({ items: [] }))
-                        }
-                        // Window 3: items found again (resets consecutive counter)
-                        if (windowCount === 3) {
-                            return res(ctx.json({ items: [{} as SyncTask] }))
-                        }
-                        // Window 4+: empty
-                        return res(ctx.json({ items: [] }))
-                    },
-                ),
-            )
-
-            const target = await getTarget()
-            const result = await target.getCompletedTasks({
-                projectId: '123',
-                token: 'kwijibo',
-            })
-
-            // Should scan: win1(found), win2(empty,1), win3(found,reset), win4(empty,1), win5(empty,2=stop)
-            expect(windowCount).toBe(5)
-            expect(result).toHaveLength(2)
-        })
-
-        it('should handle pagination via next_cursor within a window', async () => {
-            const page1Items = Array(100).fill({}) as SyncTask[]
-            const page2Items = [{}] as SyncTask[]
-            let callCount = 0
-
-            server.use(
-                rest.get(
-                    'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                    (req, res, ctx) => {
-                        const cursor = req.url.searchParams.get('cursor')
-
-                        if (!cursor) {
-                            callCount++
-                            if (callCount === 1) {
-                                return res(
-                                    ctx.json({
-                                        items: page1Items,
-                                        next_cursor: 'page2',
-                                    }),
-                                )
-                            }
-                            return res(ctx.json({ items: [] }))
-                        }
-
-                        if (cursor === 'page2') {
-                            return res(ctx.json({ items: page2Items }))
-                        }
-
-                        return res(ctx.json({ items: [] }))
-                    },
-                ),
-            )
-
-            const target = await getTarget()
-            const result = await target.getCompletedTasks({
-                projectId: '123',
-                token: 'kwijibo',
-            })
-
-            expect(result.length).toBeGreaterThanOrEqual(101)
+            expect(result.map((task) => task.id)).toEqual(tasks.map((task) => task.id))
+            expect(requests).toHaveLength(26)
+            expect(requests[25]?.get('cursor')).toBe('1')
         })
 
         it('should return empty array and log error when API fails', async () => {
@@ -296,31 +185,6 @@ describe('TodoistService', () => {
             expect(result).toEqual([])
         })
     })
-
-    function setupGetCompletedItems(items: SyncTask[]) {
-        const allTasks = chunk(items, 100)
-        const totalPages = allTasks.length
-
-        server.use(
-            rest.get(
-                'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
-                (req, res, ctx) => {
-                    const cursor = req.url.searchParams.get('cursor')
-                    const pageIndex = cursor ? parseInt(cursor, 10) : 0
-                    const tasks = allTasks[pageIndex] ?? []
-                    const hasMore = pageIndex < totalPages - 1
-                    const nextCursor = hasMore ? (pageIndex + 1).toString() : null
-
-                    return res(
-                        ctx.json({
-                            items: tasks,
-                            ...(nextCursor ? { next_cursor: nextCursor } : {}),
-                        }),
-                    )
-                },
-            ),
-        )
-    }
 
     async function getTarget() {
         const module = await Test.createTestingModule({

@@ -5,16 +5,20 @@ import { HttpModule } from '@nestjs/axios'
 import { Test } from '@nestjs/testing'
 import { getRepositoryToken } from '@nestjs/typeorm'
 import MockDate from 'mockdate'
+import { rest } from 'msw'
 
-import { buildUser } from '../../test/fixtures'
+import { buildSyncTask, buildTask, buildUser } from '../../test/fixtures'
+import { server } from '../../test/server'
 import {
     setupGetAppToken,
+    setupGetCompletedItems,
     setupGetGoogleToken,
     setupGetTasks,
     setupGetUser,
 } from '../../test/setups'
 import { CardActions as SheetCardActions } from '../constants/card-actions'
 import { User } from '../entities/user.entity'
+import { DELIMITER } from '../types'
 import * as csvHelpers from '../utils/csv-helpers'
 
 import { ActionsService } from './actions.service'
@@ -54,10 +58,14 @@ describe('ActionsService', () => {
 
     beforeAll(() => {
         MockDate.set(new Date(2022, 7, 8, 11, 26, 0))
+        server.listen({ onUnhandledRequest: 'bypass' })
     })
+
+    afterEach(() => server.resetHandlers())
 
     afterAll(() => {
         MockDate.reset()
+        server.close()
     })
 
     describe('export', () => {
@@ -224,81 +232,108 @@ describe('ActionsService', () => {
             expect(getSections).toHaveBeenCalled()
         })
 
-        it('does not make a call to get completed items if completed items not required', async () => {
-            setupGetUser(buildUser())
-            setupGetGoogleToken('kwijibo')
-            setupGetAppToken('kwijibo')
-            setupGetTasks()
+        it.each([
+            { includeCompleted: true, recentCount: 0, rowCount: 29 },
+            { includeCompleted: true, recentCount: 3, rowCount: 32 },
+            { includeCompleted: false, recentCount: 3, rowCount: 24 },
+        ])(
+            'exports $rowCount rows (includeCompleted=$includeCompleted, recent=$recentCount)',
+            async ({ includeCompleted, recentCount, rowCount }) => {
+                setupGetUser(buildUser())
+                setupGetGoogleToken('kwijibo')
+                setupGetAppToken('kwijibo')
 
-            jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
-                Promise.resolve(undefined),
-            )
+                const activeTasks = Array.from({ length: 24 }, (_, index) =>
+                    buildTask({
+                        overrides: {
+                            id: `active-${index}`,
+                            content: `Active task ${index}`,
+                            projectId: '1234',
+                        },
+                    }),
+                )
+                jest.spyOn(TodoistApi.prototype, 'getTasks').mockResolvedValue({
+                    results: activeTasks,
+                    nextCursor: null,
+                })
 
-            const getCompletedItems = jest.spyOn(TodoistService.prototype, 'getCompletedTasks')
+                const oldTasks = Array.from({ length: 5 }, () =>
+                    buildSyncTask({ overrides: { project_id: '1234' } }),
+                )
+                const recentTasks = Array.from({ length: recentCount }, () =>
+                    buildSyncTask({
+                        overrides: {
+                            project_id: '1234',
+                            completed_at: '2022-08-08T10:00:00.000Z',
+                        },
+                    }),
+                )
+                const completedTasks = [...recentTasks, ...oldTasks]
+                const completedRequests = setupGetCompletedItems(completedTasks)
+                let syncRequests = 0
+                server.use(
+                    rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) => {
+                        syncRequests++
+                        return res(
+                            ctx.json({
+                                completed_info: [
+                                    {
+                                        project_id: '1234',
+                                        completed_items: completedTasks.length,
+                                    },
+                                ],
+                            }),
+                        )
+                    }),
+                )
 
-            await target.export({
-                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
-                action: {
-                    actionType: 'submit',
-                    actionId: SheetCardActions.Export,
-                    params: {
-                        source: 'project',
-                        sourceId: '1234',
-                        url: 'https://google.com',
-                        content: 'My Project',
-                        contentPlain: 'My Project',
-                    } as ContextMenuData,
-                    inputs: {
-                        [Inputs.IncludeCompleted]: 'false',
+                const exportToSheets = jest
+                    .spyOn(target['googleSheetsService'], 'exportToSheets')
+                    .mockResolvedValue('https://docs.google.com')
+
+                await target.export({
+                    context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
+                    action: {
+                        actionType: 'submit',
+                        actionId: SheetCardActions.Export,
+                        params: {
+                            source: 'project',
+                            sourceId: '1234',
+                            url: 'https://google.com',
+                            content: 'My Project',
+                            contentPlain: 'My Project',
+                        } as ContextMenuData,
+                        inputs: {
+                            [Inputs.IncludeCompleted]: String(includeCompleted),
+                        },
                     },
-                },
-                extensionType: 'context-menu',
-                maximumDoistCardVersion: 0.5,
-            })
+                    extensionType: 'context-menu',
+                    maximumDoistCardVersion: 0.5,
+                })
 
-            expect(getCompletedItems).not.toHaveBeenCalled()
-        })
+                const csvData = exportToSheets.mock.calls[0]?.[0].csvData ?? ''
+                const [header, ...rows] = csvData.split('\n').map((row) => row.split(DELIMITER))
+                const completedDateIndex = header?.indexOf('completedDate') ?? -1
 
-        it('does make a call to get completed items if completed items are required', async () => {
-            setupGetUser(buildUser())
-            setupGetGoogleToken('kwijibo')
-            setupGetAppToken('kwijibo')
-            setupGetTasks()
-
-            jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
-                Promise.resolve(undefined),
-            )
-
-            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
-                Promise.resolve([]),
-            )
-
-            const getCompletedItems = jest
-                .spyOn(TodoistService.prototype, 'getCompletedTasks')
-                .mockImplementation(() => Promise.resolve([]))
-
-            await target.export({
-                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
-                action: {
-                    actionType: 'submit',
-                    actionId: SheetCardActions.Export,
-                    params: {
-                        source: 'project',
-                        sourceId: '1234',
-                        url: 'https://google.com',
-                        content: 'My Project',
-                        contentPlain: 'My Project',
-                    } as ContextMenuData,
-                    inputs: {
-                        [Inputs.IncludeCompleted]: 'true',
-                    },
-                },
-                extensionType: 'context-menu',
-                maximumDoistCardVersion: 0.5,
-            })
-
-            expect(getCompletedItems).toHaveBeenCalled()
-        })
+                expect(rows).toHaveLength(rowCount)
+                expect(
+                    rows
+                        .filter((row) => row[completedDateIndex])
+                        .map((row) => ({ id: row[0], completedAt: row[completedDateIndex] })),
+                ).toEqual(
+                    includeCompleted
+                        ? completedTasks.map((task) => ({
+                              id: task.id,
+                              completedAt: task.completed_at,
+                          }))
+                        : [],
+                )
+                if (!includeCompleted) {
+                    expect(completedRequests).toHaveLength(0)
+                    expect(syncRequests).toBe(0)
+                }
+            },
+        )
 
         it('fetches completed tasks for tasks with completed subtasks', async () => {
             setupGetUser(buildUser())
