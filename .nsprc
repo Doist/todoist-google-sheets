@@ -2,12 +2,12 @@
     "1097679": {
         "active": true,
         "notes": "Axios CSRF vulnerability - requires dependency updates further up the tree (like the @doist packages)",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1110858": {
         "active": true,
         "notes": "body-parser DoS vulnerability with URL encoding - requires dependency updates",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1109842": {
         "active": true,
@@ -17,7 +17,7 @@
     "1111034": {
         "active": true,
         "notes": "axios Requests Vulnerable To Possible SSRF and Credential Leakage via Absolute URL",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1111035": {
         "active": true,
@@ -27,22 +27,22 @@
     "1110996": {
         "active": true,
         "notes": "Node-forge has ASN.1 Unbounded Recursion",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1110998": {
         "active": true,
         "notes": "Node-forge is vulnerable to ASN.1 OID Integer Truncation",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1111068": {
         "active": true,
         "notes": "node-forge ASN.1 OID Integer Truncation - requires dependency updates",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1111243": {
         "active": true,
         "notes": "jws HMAC Signature verification issue - requires dependency updates",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1112195": {
         "active": true,
@@ -97,11 +97,291 @@
     "1113635": {
         "active": true,
         "notes": "Multer DoS via incomplete cleanup - requires dependency updates",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
     },
     "1113636": {
         "active": true,
         "notes": "Multer DoS via resource exhaustion - requires dependency updates",
-        "expiry": "2026/06/30"
+        "expiry": "2027/01/31"
+    },
+    "1117063": {
+        "active": true,
+        "notes": "@nestjs/core Improperly Neutralizes Special Elements in Output Used by a Downstream Component ('Injection') - direct dependency",
+        "expiry": "2027/01/31"
+    },
+    "1116672": {
+        "active": true,
+        "notes": "Axios has a NO_PROXY Hostname Normalization Bypass that Leads to SSRF - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117573": {
+        "active": true,
+        "notes": "Axios: Authentication Bypass via Prototype Pollution Gadget in `validateStatus` Merge Strategy - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117575": {
+        "active": true,
+        "notes": "Axios: Incomplete Fix for CVE-2025-62718 — NO_PROXY Protection Bypassed via RFC 1122 Loopback Subnet (127.0.0.0/8) in Axios 1.15.0 - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117582": {
+        "active": true,
+        "notes": "Axios: no_proxy bypass via IP alias allows SSRF - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117586": {
+        "active": true,
+        "notes": "Axios' HTTP adapter-streamed uploads bypass maxBodyLength when maxRedirects: 0 - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117588": {
+        "active": true,
+        "notes": "Axios: HTTP adapter streamed responses bypass maxContentLength - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117590": {
+        "active": true,
+        "notes": "Axios: Prototype Pollution Gadgets - Response Tampering, Data Exfiltration, and Request Hijacking - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117592": {
+        "active": true,
+        "notes": "Axios: Header Injection via Prototype Pollution - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117594": {
+        "active": true,
+        "notes": "Axios: XSRF Token Cross-Origin Leakage via Prototype Pollution Gadget in `withXSRFToken` Boolean Coercion - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1117857": {
+        "active": true,
+        "notes": "Axios is Vulnerable to Denial of Service via __proto__ Key in mergeConfig - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1119403": {
+        "active": true,
+        "notes": "Axios has Unrestricted Cloud Metadata Exfiltration via Header Injection Chain - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1120124": {
+        "active": true,
+        "notes": "Axios: unbounded recursion in toFormData causes DoS via deeply nested request data - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1120546": {
+        "active": true,
+        "notes": "Axios: Regular Expression Denial of Service (ReDoS) via Cookie Name Injection - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1120644": {
+        "active": true,
+        "notes": "Axios: Proxy-Authorization Credential Leak to Origin Server Across HTTP-to-HTTPS Redirect in Axios Node.js HTTP Adapter - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1120646": {
+        "active": true,
+        "notes": "Axios: Proxy-Authorization header leaks to redirect target when proxy is re-evaluated to direct connection - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1120648": {
+        "active": true,
+        "notes": "axios Vulnerable to Credential Theft and Response Hijacking via Prototype Pollution Gadget in Config Merge - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1120651": {
+        "active": true,
+        "notes": "axios has DoS & Header Injection via Prototype Pollution Read-Side Gadgets in axios merge functions - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1123825": {
+        "active": true,
+        "notes": "axios's shouldBypassProxy does not recognize IPv4-mapped IPv6 addresses, allowing NO_PROXY bypass (incomplete fix for CVE-2025-62718) - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1147948": {
+        "active": true,
+        "notes": "Axios: Prototype pollution gadgets can alter axios request construction - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1153181": {
+        "active": true,
+        "notes": "Axios: Nested axios option objects can consume polluted prototype values - axios 0.21 via @doist/integrations-common",
+        "expiry": "2027/01/31"
+    },
+    "1240101": {
+        "active": true,
+        "notes": "brace-expansion: Quadratic-time expansion of the `{a},b}` rewrite causes CPU denial of service - via typeorm",
+        "expiry": "2027/01/31"
+    },
+    "1240105": {
+        "active": true,
+        "notes": "brace-expansion: DoS via uncontrolled recursion on nested brace groups causing stack exhaustion - via typeorm",
+        "expiry": "2027/01/31"
+    },
+    "1240109": {
+        "active": true,
+        "notes": "brace-expansion: DoS via uncontrolled recursion in parseCommaParts causing stack exhaustion - via typeorm",
+        "expiry": "2027/01/31"
+    },
+    "1164782": {
+        "active": true,
+        "notes": "fflate unzipSync can enter an infinite loop when parsing malformed ZIP64 archives - via @nestjs/common > file-type",
+        "expiry": "2027/01/31"
+    },
+    "1114301": {
+        "active": true,
+        "notes": "file-type affected by infinite loop in ASF parser on malformed input with zero-size sub-header - via @nestjs/common",
+        "expiry": "2027/01/31"
+    },
+    "1114726": {
+        "active": true,
+        "notes": "file-type: ZIP Decompression Bomb DoS via [Content_Types].xml entry - via @nestjs/common",
+        "expiry": "2027/01/31"
+    },
+    "1115538": {
+        "active": true,
+        "notes": "Handlebars.js has JavaScript Injection via AST Type Confusion by tampering @partial-block - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1115539": {
+        "active": true,
+        "notes": "Handlebars.js has JavaScript Injection via AST Type Confusion - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1115544": {
+        "active": true,
+        "notes": "Handlebars.js has Prototype Pollution Leading to XSS through Partial Template Injection - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1115588": {
+        "active": true,
+        "notes": "Handlebars.js has a Prototype Method Access Control Gap via Missing __lookupSetter__ Blocklist Entry - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1115693": {
+        "active": true,
+        "notes": "Handlebars.js has JavaScript Injection via AST Type Confusion when passing an object as dynamic partial - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1115694": {
+        "active": true,
+        "notes": "Handlebars.js has Denial of Service via Malformed Decorator Syntax in Template Compilation - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1117465": {
+        "active": true,
+        "notes": "Handlebars.js has JavaScript Injection in CLI Precompiler via Unescaped Names and Options - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1241676": {
+        "active": true,
+        "notes": "Handlebars: JavaScript Injection via Unsafe Inline Embedding of Precompiled Templates - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1241677": {
+        "active": true,
+        "notes": "Handlebars: JavaScript Injection via AST Type Confusion in compile (bypass of CVE-2026-33937) - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1242173": {
+        "active": true,
+        "notes": "Handlebars: JavaScript Injection via Own Property Check Bypass - via @doist/ui-extensions-server > hbs",
+        "expiry": "2027/01/31"
+    },
+    "1115806": {
+        "active": true,
+        "notes": "lodash vulnerable to Code Injection via `_.template` imports key names - direct dependency and via @nestjs/config",
+        "expiry": "2027/01/31"
+    },
+    "1115810": {
+        "active": true,
+        "notes": "lodash vulnerable to Prototype Pollution via array path bypass in `_.unset` and `_.omit` - direct dependency and via @nestjs/config",
+        "expiry": "2027/01/31"
+    },
+    "1120370": {
+        "active": true,
+        "notes": "Lodash has Prototype Pollution Vulnerability in `_.unset` and `_.omit` functions - direct dependency and via @nestjs/config",
+        "expiry": "2027/01/31"
+    },
+    "1113996": {
+        "active": true,
+        "notes": "Multer Vulnerable to Denial of Service via Uncontrolled Recursion - via @nestjs/platform-express",
+        "expiry": "2027/01/31"
+    },
+    "1121089": {
+        "active": true,
+        "notes": "Multer vulnerable to Denial of Service via deeply nested field names - via @nestjs/platform-express",
+        "expiry": "2027/01/31"
+    },
+    "1121091": {
+        "active": true,
+        "notes": "Multer vulnerable to Denial of Service via incomplete cleanup of aborted uploads - via @nestjs/platform-express",
+        "expiry": "2027/01/31"
+    },
+    "1193790": {
+        "active": true,
+        "notes": "multer vulnerable to Denial of Service via crafted multipart field names - via @nestjs/platform-express",
+        "expiry": "2027/01/31"
+    },
+    "1193793": {
+        "active": true,
+        "notes": "multer vulnerable to Denial of Service via oversized array index in field names - via @nestjs/platform-express",
+        "expiry": "2027/01/31"
+    },
+    "1115545": {
+        "active": true,
+        "notes": "Forge has a basicConstraints bypass in its certificate chain verification (RFC 5280 violation) - via googleapis",
+        "expiry": "2027/01/31"
+    },
+    "1115546": {
+        "active": true,
+        "notes": "Forge has signature forgery in Ed25519 due to missing S > L check - via googleapis",
+        "expiry": "2027/01/31"
+    },
+    "1115548": {
+        "active": true,
+        "notes": "Forge has Denial of Service via Infinite Loop in BigInteger.modInverse() with Zero Input - via googleapis",
+        "expiry": "2027/01/31"
+    },
+    "1115612": {
+        "active": true,
+        "notes": "Forge has signature forgery in RSA-PKCS due to ASN.1 extra field - via googleapis",
+        "expiry": "2027/01/31"
+    },
+    "1240912": {
+        "active": true,
+        "notes": "node-forge RSA PKCS#1 v1.5 signature verification accepts extra nested DigestAlgorithm elements - via googleapis",
+        "expiry": "2027/01/31"
+    },
+    "1115527": {
+        "active": true,
+        "notes": "path-to-regexp vulnerable to Regular Expression Denial of Service via multiple route parameters - via express",
+        "expiry": "2027/01/31"
+    },
+    "1241210": {
+        "active": true,
+        "notes": "proxy-addr vulnerable to IP spoofing via IPv4-mapped IPv6 trust subnet - via express",
+        "expiry": "2027/01/31"
+    },
+    "1113719": {
+        "active": true,
+        "notes": "qs's arrayLimit bypass in its bracket notation allows DoS via memory exhaustion - via @nestjs/platform-express and express",
+        "expiry": "2027/01/31"
+    },
+    "1119502": {
+        "active": true,
+        "notes": "qs has a remotely triggerable DoS: qs.stringify crashes with TypeError on null/undefined entries in comma-format arrays when encodeValuesOnly is set - via @nestjs/platform-express and express",
+        "expiry": "2027/01/31"
+    },
+    "1158507": {
+        "active": true,
+        "notes": "qs: Denial of Service via Attacker Controlled isBuffer - via @nestjs/platform-express and express",
+        "expiry": "2027/01/31"
+    },
+    "1119441": {
+        "active": true,
+        "notes": "uuid: Missing buffer bounds check in v3/v5/v6 when buf is provided - via @doist/todoist-api-typescript and @nestjs/typeorm",
+        "expiry": "2027/01/31"
     }
 }
