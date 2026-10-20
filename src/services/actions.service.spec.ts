@@ -234,12 +234,13 @@ describe('ActionsService', () => {
         })
 
         it.each([
-            { includeCompleted: true, recentCount: 0, rowCount: 29 },
-            { includeCompleted: true, recentCount: 3, rowCount: 32 },
-            { includeCompleted: false, recentCount: 3, rowCount: 24 },
+            { includeCompleted: true, recentCount: 0, rowCount: 29, syncFails: false },
+            { includeCompleted: true, recentCount: 3, rowCount: 32, syncFails: false },
+            { includeCompleted: true, recentCount: 0, rowCount: 29, syncFails: true },
+            { includeCompleted: false, recentCount: 3, rowCount: 24, syncFails: false },
         ])(
-            'exports $rowCount rows (includeCompleted=$includeCompleted, recent=$recentCount)',
-            async ({ includeCompleted, recentCount, rowCount }) => {
+            'exports $rowCount rows (includeCompleted=$includeCompleted, recent=$recentCount, syncFails=$syncFails)',
+            async ({ includeCompleted, recentCount, rowCount, syncFails }) => {
                 setupGetUser(buildUser())
                 setupGetGoogleToken('kwijibo')
                 setupGetAppToken('kwijibo')
@@ -276,6 +277,9 @@ describe('ActionsService', () => {
                 server.use(
                     rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) => {
                         syncRequests++
+                        if (syncFails) {
+                            return res(ctx.status(500))
+                        }
                         return res(
                             ctx.json({
                                 completed_info: [
