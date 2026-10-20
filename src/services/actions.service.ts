@@ -22,7 +22,7 @@ import { uniqBy } from 'lodash'
 import { exportEvent } from '../analytics/events'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
 import { Sheets } from '../i18n/en'
-import { batchExecute } from '../utils/batch-helpers'
+import { batchExecute, ConcurrencyLimiter, createConcurrencyLimiter } from '../utils/batch-helpers'
 import { convertTasksToCsvString } from '../utils/csv-helpers'
 import { getExportOptions } from '../utils/input-helpers'
 
@@ -38,6 +38,11 @@ import type {
     TodoistContextMenuData,
 } from '@doist/ui-extensions-core'
 import type { ExportOptionsToUse, Task } from '../types'
+
+/**
+ * Maximum number of completed-task requests in flight at once during a single export.
+ */
+const MAX_CONCURRENT_COMPLETED_TASK_REQUESTS = 20
 
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
@@ -262,6 +267,7 @@ export class ActionsService extends ActionsServiceBase {
         sections: Section[]
     }): Promise<Task[]> {
         const { appToken, projectId, tasks, sections } = params
+        const limit = createConcurrencyLimiter(MAX_CONCURRENT_COMPLETED_TASK_REQUESTS)
 
         const syncedCompletedInfo = await this.todoistService.getCompletedInfo({ token: appToken })
         const completedInfo = syncedCompletedInfo ?? []
@@ -274,6 +280,7 @@ export class ActionsService extends ActionsServiceBase {
             token: appToken,
             projectId,
             expectedCount: projectExpectedCount,
+            limit,
         })
 
         const taskIdsWithCompletedSubtasks = this.findIdsWithCompletedChildren(
@@ -288,8 +295,13 @@ export class ActionsService extends ActionsServiceBase {
         )
 
         const [taskCompletedTasks, sectionCompletedTasks] = await Promise.all([
-            this.fetchCompletedTasksForIds(appToken, taskIdsWithCompletedSubtasks, 'taskId'),
-            this.fetchCompletedTasksForIds(appToken, sectionIdsWithCompletedTasks, 'sectionId'),
+            this.fetchCompletedTasksForIds(appToken, taskIdsWithCompletedSubtasks, 'taskId', limit),
+            this.fetchCompletedTasksForIds(
+                appToken,
+                sectionIdsWithCompletedTasks,
+                'sectionId',
+                limit,
+            ),
         ])
 
         let allCompletedTasks = [
@@ -309,6 +321,7 @@ export class ActionsService extends ActionsServiceBase {
                 appToken,
                 completedTasksWithChildren,
                 'taskId',
+                limit,
             )
 
             allCompletedTasks = [...allCompletedTasks, ...subtaskResults]
@@ -327,6 +340,7 @@ export class ActionsService extends ActionsServiceBase {
         appToken: string,
         idsWithCounts: Map<string, number>,
         idType: 'taskId' | 'sectionId',
+        limit: ConcurrencyLimiter,
     ): Promise<Task[]> {
         if (idsWithCounts.size === 0) {
             return []
@@ -339,6 +353,7 @@ export class ActionsService extends ActionsServiceBase {
                     token: appToken,
                     [idType]: id,
                     expectedCount,
+                    limit,
                 }),
             10,
         )

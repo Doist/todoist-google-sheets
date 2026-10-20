@@ -56,7 +56,7 @@ describe('TodoistService', () => {
                 scope: { projectId: '123' },
                 filter: 'project_id',
                 expectedCount: 1,
-                requestCount: 25,
+                requestCount: 26,
             },
             {
                 scope: { taskId: '123' },
@@ -112,12 +112,12 @@ describe('TodoistService', () => {
             {
                 scope: { projectId: '123' },
                 nested: [{ section_id: '456' }, { parent_id: '789' }],
-                requestCount: 25,
+                requestCount: 26,
             },
             {
                 scope: { sectionId: '456' },
                 nested: [{ section_id: '456', parent_id: '789' }],
-                requestCount: 25,
+                requestCount: 26,
             },
             {
                 scope: { taskId: '789' },
@@ -167,8 +167,8 @@ describe('TodoistService', () => {
             })
 
             expect(result.map((task) => task.id)).toEqual(tasks.map((task) => task.id))
-            expect(requests).toHaveLength(26)
-            expect(requests[25]?.get('cursor')).toBe('1')
+            expect(requests).toHaveLength(27)
+            expect(requests.map((params) => params.get('cursor')).filter(Boolean)).toEqual(['1'])
         })
 
         it('should return empty array and log error when API fails', async () => {

@@ -5,6 +5,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { lastValueFrom } from 'rxjs'
 
 import type { Task } from '../types'
+import type { ConcurrencyLimiter } from '../utils/batch-helpers'
 
 const LIMIT = 100
 
@@ -20,6 +21,12 @@ const MAX_WINDOW_DAYS = 90
  * (founded 2007) so no completed tasks can exist before this date.
  */
 const EARLIEST_DATE = new Date('2006-01-01T00:00:00Z')
+
+/**
+ * Number of date windows fetched in parallel after the first one. The first window is fetched
+ * alone because recent completions often satisfy the expected count straight away.
+ */
+const WINDOW_CONCURRENCY = 5
 
 type SyncDue = {
     date: string
@@ -87,6 +94,13 @@ function isDirectChild(
     return Boolean(sectionId) || !item.section_id
 }
 
+/**
+ * Limiter that runs every request straight away, for callers that don't share a limit.
+ */
+function runImmediately<T>(fn: () => Promise<T>): Promise<T> {
+    return fn()
+}
+
 @Injectable()
 export class TodoistService {
     private readonly logger = new Logger(TodoistService.name)
@@ -150,12 +164,14 @@ export class TodoistService {
         taskId,
         sectionId,
         expectedCount,
+        limit = runImmediately,
     }: {
         token: string
         projectId?: string
         taskId?: string
         sectionId?: string
         expectedCount?: number
+        limit?: ConcurrencyLimiter
     }): Promise<Task[]> {
         try {
             const items = await this.getCompletedTasksInternal({
@@ -164,6 +180,7 @@ export class TodoistService {
                 taskId,
                 sectionId,
                 expectedCount,
+                limit,
             })
 
             return items.map((task) => this.getTaskFromQuickAddResponse(task))
@@ -214,7 +231,9 @@ export class TodoistService {
      * Fetches completed tasks using the documented Todoist API v1 endpoint.
      *
      * The by_completion_date endpoint enforces a maximum date range of 3 months,
-     * so we walk backwards from today in 90-day windows until EARLIEST_DATE.
+     * so we walk backwards from today in 90-day windows until EARLIEST_DATE, fetching up to
+     * WINDOW_CONCURRENCY windows in parallel after the first one. Every request runs through
+     * `limit`, so callers can cap concurrent requests across several scans.
      * We terminate early once we've collected at least `expectedCount` items
      * (from completed_info). Empty windows do not prove that older tasks don't
      * exist, so an unavailable or unmet count requires scanning the full history.
@@ -231,33 +250,51 @@ export class TodoistService {
         taskId,
         sectionId,
         expectedCount,
+        limit = runImmediately,
     }: {
         token: string
         projectId?: string
         taskId?: string
         sectionId?: string
         expectedCount?: number
+        limit?: ConcurrencyLimiter
     }): Promise<SyncTask[]> {
         const allItems: SyncTask[] = []
         let countedItems = 0
 
-        for (const { since, until } of this.generateDateWindows()) {
-            const windowItems = await this.fetchCompletedTasksForWindow({
-                token,
-                since,
-                until,
-                projectId,
-                taskId,
-                sectionId,
-            })
-            allItems.push(...windowItems)
-            countedItems += windowItems.filter((item) =>
-                isDirectChild(item, { taskId, sectionId }),
-            ).length
+        const windows = Array.from(this.generateDateWindows())
+        let start = 0
+        let batchSize = 1
+
+        while (start < windows.length) {
+            const batch = windows.slice(start, start + batchSize)
+            const batchItems = await Promise.all(
+                batch.map(({ since, until }) =>
+                    this.fetchCompletedTasksForWindow({
+                        token,
+                        since,
+                        until,
+                        projectId,
+                        taskId,
+                        sectionId,
+                        limit,
+                    }),
+                ),
+            )
+
+            for (const windowItems of batchItems) {
+                allItems.push(...windowItems)
+                countedItems += windowItems.filter((item) =>
+                    isDirectChild(item, { taskId, sectionId }),
+                ).length
+            }
 
             if (expectedCount !== undefined && countedItems >= expectedCount) {
                 break
             }
+
+            start += batch.length
+            batchSize = WINDOW_CONCURRENCY
         }
 
         return allItems
@@ -292,6 +329,7 @@ export class TodoistService {
         projectId,
         taskId,
         sectionId,
+        limit,
     }: {
         token: string
         since: string
@@ -299,21 +337,24 @@ export class TodoistService {
         projectId?: string
         taskId?: string
         sectionId?: string
+        limit: ConcurrencyLimiter
     }): Promise<SyncTask[]> {
         const windowItems: SyncTask[] = []
         let nextCursor: string | null = null
 
         do {
-            const data: { items: SyncTask[]; nextCursor: string | null } =
-                await this.fetchCompletedTasksPage({
+            const cursor = nextCursor
+            const data: { items: SyncTask[]; nextCursor: string | null } = await limit(() =>
+                this.fetchCompletedTasksPage({
                     token,
                     since,
                     until,
                     projectId,
                     taskId,
                     sectionId,
-                    cursor: nextCursor,
-                })
+                    cursor,
+                }),
+            )
 
             windowItems.push(...data.items)
             nextCursor = data.nextCursor
