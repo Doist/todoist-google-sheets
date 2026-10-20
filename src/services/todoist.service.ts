@@ -3,6 +3,7 @@ import { Section, TodoistApi, User } from '@doist/todoist-api-typescript'
 import { HttpService } from '@nestjs/axios'
 import { Injectable, Logger } from '@nestjs/common'
 import { isAxiosError } from 'axios'
+import { chunk } from 'lodash'
 import { lastValueFrom } from 'rxjs'
 
 import type { Task } from '../types'
@@ -198,16 +199,13 @@ export class TodoistService {
         token: string
         projectId: string
     }): Promise<SyncTask[]> {
-        const windows = Array.from(this.generateDateWindows())
         const allItems: SyncTask[] = []
 
-        for (let start = 0; start < windows.length; start += WINDOW_CONCURRENCY) {
+        for (const batch of chunk(Array.from(this.generateDateWindows()), WINDOW_CONCURRENCY)) {
             const batchItems = await Promise.all(
-                windows
-                    .slice(start, start + WINDOW_CONCURRENCY)
-                    .map(({ since, until }) =>
-                        this.fetchCompletedTasksForWindow({ token, since, until, projectId }),
-                    ),
+                batch.map(({ since, until }) =>
+                    this.fetchCompletedTasksForWindow({ token, since, until, projectId }),
+                ),
             )
 
             allItems.push(...batchItems.flat())

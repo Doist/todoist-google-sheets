@@ -34,7 +34,7 @@ import type {
     DoistCardResponse,
     TodoistContextMenuData,
 } from '@doist/ui-extensions-core'
-import type { ExportOptionsToUse, Task } from '../types'
+import type { ExportOptionsToUse } from '../types'
 
 @Injectable()
 export class ActionsService extends ActionsServiceBase {
@@ -216,7 +216,7 @@ export class ActionsService extends ActionsServiceBase {
         contextData: TodoistContextMenuData
         exportOptions: ExportOptionsToUse
     }) {
-        const [tasks, sections, collaborators] = await Promise.all([
+        const [tasks, sections, collaborators, completedTasks] = await Promise.all([
             this.todoistService.getProjectTasks({
                 token: appToken,
                 projectId: contextData.sourceId,
@@ -233,15 +233,13 @@ export class ActionsService extends ActionsServiceBase {
                       projectId: contextData.sourceId,
                   })
                 : Promise.resolve([]),
+            exportOptions.includeCompleted
+                ? this.todoistService.getCompletedTasks({
+                      token: appToken,
+                      projectId: contextData.sourceId,
+                  })
+                : Promise.resolve([]),
         ])
-
-        let completedTasks: Task[] = []
-        if (exportOptions.includeCompleted) {
-            completedTasks = await this.todoistService.getCompletedTasks({
-                token: appToken,
-                projectId: contextData.sourceId,
-            })
-        }
 
         return {
             tasks: [...tasks, ...completedTasks],
