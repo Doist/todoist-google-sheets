@@ -46,7 +46,7 @@ export type SyncTask = {
     priority: number
     project_id: string
     responsible_uid?: string | null
-    section_id: string
+    section_id: string | null
     user_id: string
     due?: SyncDue | null
 
@@ -167,9 +167,12 @@ export class TodoistService {
      * which tasks and sections have completed children that need to be
      * fetched separately.
      *
+     * Entries with zero completed items are omitted by the API. Returns `null` when the request
+     * fails, so callers can tell an unknown count from a zero count.
+     *
      * @see https://developer.todoist.com/api/v1/#tag/Sync/Overview/Read-resources
      */
-    async getCompletedInfo({ token }: { token: string }): Promise<CompletedInfo[]> {
+    async getCompletedInfo({ token }: { token: string }): Promise<CompletedInfo[] | null> {
         try {
             const response = await lastValueFrom(
                 this.httpService.post<{ completed_info: CompletedInfo[] }>(
@@ -184,7 +187,7 @@ export class TodoistService {
             this.logger.error('Failed to fetch completed_info from Sync API', {
                 error: error instanceof Error ? error.message : error,
             })
-            return []
+            return null
         }
     }
 
@@ -196,6 +199,10 @@ export class TodoistService {
      * We terminate early once we've collected at least `expectedCount` items
      * (from completed_info). Empty windows do not prove that older tasks don't
      * exist, so an unavailable or unmet count requires scanning the full history.
+     *
+     * completed_info counts each task under its direct container only (parent task, else
+     * section, else project), while project and section queries also return nested tasks.
+     * Only tasks directly in the queried container count towards `expectedCount`.
      *
      * @see https://developer.todoist.com/api/v1/#tag/Tasks/operation/getTasks_Completed_By_Completion_Date
      */
@@ -213,6 +220,7 @@ export class TodoistService {
         expectedCount?: number
     }): Promise<SyncTask[]> {
         const allItems: SyncTask[] = []
+        let countedItems = 0
 
         for (const { since, until } of this.generateDateWindows()) {
             const windowItems = await this.fetchCompletedTasksForWindow({
@@ -224,8 +232,11 @@ export class TodoistService {
                 sectionId,
             })
             allItems.push(...windowItems)
+            countedItems += windowItems.filter(
+                (item) => taskId || (!item.parent_id && (sectionId || !item.section_id)),
+            ).length
 
-            if (expectedCount !== undefined && allItems.length >= expectedCount) {
+            if (expectedCount !== undefined && countedItems >= expectedCount) {
                 break
             }
         }

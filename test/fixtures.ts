@@ -75,7 +75,7 @@ export const buildSyncTask = build<SyncTask>('SyncTask', {
         parent_id: null,
         priority: 1,
         project_id: '123',
-        section_id: '12345',
+        section_id: null,
         user_id: '123',
         due: null,
         deadline: null,

@@ -17,6 +17,7 @@ import {
 } from '@doist/ui-extensions-server'
 
 import { BadRequestException, Injectable } from '@nestjs/common'
+import { uniqBy } from 'lodash'
 
 import { exportEvent } from '../analytics/events'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
@@ -262,11 +263,12 @@ export class ActionsService extends ActionsServiceBase {
     }): Promise<Task[]> {
         const { appToken, projectId, tasks, sections } = params
 
-        const completedInfo = await this.todoistService.getCompletedInfo({ token: appToken })
+        const syncedCompletedInfo = await this.todoistService.getCompletedInfo({ token: appToken })
+        const completedInfo = syncedCompletedInfo ?? []
 
-        const projectExpectedCount = completedInfo.find(
-            (info) => info.project_id === projectId,
-        )?.completed_items
+        const projectExpectedCount = syncedCompletedInfo
+            ? completedInfo.find((info) => info.project_id === projectId)?.completed_items ?? 0
+            : undefined
 
         const projectCompletedTasks = await this.todoistService.getCompletedTasks({
             token: appToken,
@@ -318,7 +320,7 @@ export class ActionsService extends ActionsServiceBase {
             )
         }
 
-        return allCompletedTasks
+        return uniqBy(allCompletedTasks, 'id')
     }
 
     private async fetchCompletedTasksForIds(

@@ -73,9 +73,7 @@ describe('TodoistService', () => {
         ])(
             'should retrieve old $filter tasks across empty windows with count $expectedCount',
             async ({ scope, filter, expectedCount, requestCount }) => {
-                const task = buildSyncTask({
-                    overrides: { parent_id: '123', section_id: '123' },
-                })
+                const task = buildSyncTask({ overrides: { [filter]: '123' } })
                 const requests = setupGetCompletedItems([task])
                 const target = await getTarget()
 
@@ -173,7 +171,7 @@ describe('TodoistService', () => {
             })
         })
 
-        it('should return an empty array when the sync endpoint fails', async () => {
+        it('should return null when the sync endpoint fails', async () => {
             server.use(
                 rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) => {
                     return res(ctx.status(500))
@@ -182,7 +180,7 @@ describe('TodoistService', () => {
 
             const target = await getTarget()
             const result = await target.getCompletedInfo({ token: 'kwijibo' })
-            expect(result).toEqual([])
+            expect(result).toBeNull()
         })
     })
 
