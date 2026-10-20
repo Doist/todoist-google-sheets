@@ -68,6 +68,25 @@ type CompletedTasksResponse = {
     next_cursor?: string | null
 }
 
+/**
+ * Whether a completed task sits directly in the queried container, matching how completed_info
+ * counts it: under its parent task, else its section, else its project.
+ */
+function isDirectChild(
+    item: SyncTask,
+    { taskId, sectionId }: { taskId?: string; sectionId?: string },
+): boolean {
+    if (taskId) {
+        return true
+    }
+
+    if (item.parent_id) {
+        return false
+    }
+
+    return Boolean(sectionId) || !item.section_id
+}
+
 @Injectable()
 export class TodoistService {
     private readonly logger = new Logger(TodoistService.name)
@@ -232,8 +251,8 @@ export class TodoistService {
                 sectionId,
             })
             allItems.push(...windowItems)
-            countedItems += windowItems.filter(
-                (item) => taskId || (!item.parent_id && (sectionId || !item.section_id)),
+            countedItems += windowItems.filter((item) =>
+                isDirectChild(item, { taskId, sectionId }),
             ).length
 
             if (expectedCount !== undefined && countedItems >= expectedCount) {
