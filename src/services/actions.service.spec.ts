@@ -7,7 +7,7 @@ import { getRepositoryToken } from '@nestjs/typeorm'
 import MockDate from 'mockdate'
 import { rest } from 'msw'
 
-import { buildSyncTask, buildTask, buildUser } from '../../test/fixtures'
+import { buildSection, buildSyncTask, buildTask, buildUser } from '../../test/fixtures'
 import { server } from '../../test/server'
 import {
     setupGetAppToken,
@@ -340,6 +340,74 @@ describe('ActionsService', () => {
                 }
             },
         )
+
+        it('exports a completed task returned by both project and section queries once', async () => {
+            setupGetUser(buildUser())
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
+            setupGetTasks()
+
+            const section = buildSection({ overrides: { projectId: '1234' } })
+            setupGetSections([section])
+
+            const completedAt = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+            const rootTask = buildSyncTask({
+                overrides: { project_id: '1234', completed_at: completedAt },
+            })
+            const sectionTask = buildSyncTask({
+                overrides: {
+                    project_id: '1234',
+                    section_id: section.id,
+                    completed_at: completedAt,
+                },
+            })
+            setupGetCompletedItems([rootTask, sectionTask])
+            server.use(
+                rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) =>
+                    res(
+                        ctx.json({
+                            completed_info: [
+                                { project_id: '1234', completed_items: 1 },
+                                { section_id: section.id, completed_items: 1 },
+                            ],
+                        }),
+                    ),
+                ),
+            )
+
+            const exportToSheets = jest
+                .spyOn(target['googleSheetsService'], 'exportToSheets')
+                .mockResolvedValue('https://docs.google.com')
+
+            await target.export({
+                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
+                action: {
+                    actionType: 'submit',
+                    actionId: SheetCardActions.Export,
+                    params: {
+                        source: 'project',
+                        sourceId: '1234',
+                        url: 'https://google.com',
+                        content: 'My Project',
+                        contentPlain: 'My Project',
+                    } as ContextMenuData,
+                    inputs: {
+                        [Inputs.IncludeCompleted]: 'true',
+                    },
+                },
+                extensionType: 'context-menu',
+                maximumDoistCardVersion: 0.5,
+            })
+
+            const csvData = exportToSheets.mock.calls[0]?.[0].csvData ?? ''
+            const ids = csvData
+                .split('\n')
+                .slice(1)
+                .map((row) => row.split(DELIMITER)[0])
+
+            expect(ids.filter((id) => id === rootTask.id)).toHaveLength(1)
+            expect(ids.filter((id) => id === sectionTask.id)).toHaveLength(1)
+        })
 
         it('fetches completed tasks for tasks with completed subtasks', async () => {
             setupGetUser(buildUser())
