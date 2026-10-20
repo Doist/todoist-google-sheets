@@ -341,6 +341,60 @@ describe('ActionsService', () => {
             },
         )
 
+        it('exports nested completed tasks when the project has no completed_info entry', async () => {
+            setupGetUser(buildUser())
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
+            setupGetTasks()
+            setupGetSections()
+
+            const subtask = buildSyncTask({
+                overrides: {
+                    project_id: '1234',
+                    parent_id: 'completed-parent',
+                    completed_at: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
+                },
+            })
+            setupGetCompletedItems([subtask])
+            server.use(
+                rest.post('https://api.todoist.com/api/v1/sync', (_req, res, ctx) =>
+                    res(ctx.json({ completed_info: [] })),
+                ),
+            )
+
+            const exportToSheets = jest
+                .spyOn(target['googleSheetsService'], 'exportToSheets')
+                .mockResolvedValue('https://docs.google.com')
+
+            await target.export({
+                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
+                action: {
+                    actionType: 'submit',
+                    actionId: SheetCardActions.Export,
+                    params: {
+                        source: 'project',
+                        sourceId: '1234',
+                        url: 'https://google.com',
+                        content: 'My Project',
+                        contentPlain: 'My Project',
+                    } as ContextMenuData,
+                    inputs: {
+                        [Inputs.IncludeCompleted]: 'true',
+                    },
+                },
+                extensionType: 'context-menu',
+                maximumDoistCardVersion: 0.5,
+            })
+
+            const csvData = exportToSheets.mock.calls[0]?.[0].csvData ?? ''
+            const ids = csvData
+                .split('\n')
+                .slice(1)
+                .map((row) => row.split(DELIMITER)[0])
+
+            expect(ids).toContain(subtask.id)
+        })
+
         it('exports a completed task returned by both project and section queries once', async () => {
             setupGetUser(buildUser())
             setupGetGoogleToken('kwijibo')
