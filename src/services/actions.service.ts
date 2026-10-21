@@ -17,6 +17,7 @@ import {
 } from '@doist/ui-extensions-server'
 
 import { BadRequestException, Injectable } from '@nestjs/common'
+import { uniqBy } from 'lodash'
 
 import { exportEvent } from '../analytics/events'
 import { CardActions as SheetsCardActions } from '../constants/card-actions'
@@ -318,7 +319,8 @@ export class ActionsService extends ActionsServiceBase {
             )
         }
 
-        return allCompletedTasks
+        // The project query also returns section tasks and subtasks, which are fetched again above
+        return uniqBy(allCompletedTasks, 'id')
     }
 
     private async fetchCompletedTasksForIds(

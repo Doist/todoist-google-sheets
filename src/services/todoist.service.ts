@@ -16,11 +16,18 @@ const LIMIT = 100
 const MAX_WINDOW_DAYS = 90
 
 /**
- * Stop scanning backwards after this many consecutive 90-day windows
- * return zero results. Acts as a safety net alongside the expectedCount
- * early-termination to avoid unnecessary API calls.
+ * Stop scanning backwards after this many consecutive 90-day windows return zero results. Only
+ * applies when no expectedCount is available, as empty windows don't prove that no older completed
+ * tasks exist.
  */
 const CONSECUTIVE_EMPTY_WINDOW_THRESHOLD = 2
+
+/**
+ * Maximum number of date windows fetched concurrently while scanning towards an expectedCount.
+ * Batches start at one window and double up to this limit, so scans that finish early make few
+ * extra requests, while long scans across inactive periods still finish within the proxy timeout.
+ */
+const MAX_CONCURRENT_WINDOWS = 4
 
 /**
  * Hard lower bound for date window generation. Predates Todoist's existence
@@ -199,11 +206,16 @@ export class TodoistService {
      * Fetches completed tasks using the documented Todoist API v1 endpoint.
      *
      * The by_completion_date endpoint enforces a maximum date range of 3 months,
-     * so we walk backwards from today in 90-day windows. To avoid making ~81
+     * so we walk backwards from today in 90-day windows. To avoid making ~85
      * requests per entity (scanning back to 2006), we terminate early when:
      *
-     * 1. We've collected at least `expectedCount` items (from completed_info), OR
-     * 2. We've seen CONSECUTIVE_EMPTY_WINDOW_THRESHOLD consecutive empty windows
+     * 1. We've collected `expectedCount` items counted by completed_info, OR
+     * 2. No `expectedCount` is available and we've seen
+     *    CONSECUTIVE_EMPTY_WINDOW_THRESHOLD consecutive empty windows
+     *
+     * When `expectedCount` is available, windows are fetched in concurrent batches of up to
+     * MAX_CONCURRENT_WINDOWS, but results are still processed in order, so termination and error
+     * handling match a sequential scan.
      *
      * @see https://developer.todoist.com/api/v1/#tag/Tasks/operation/getTasks_Completed_By_Completion_Date
      */
@@ -220,35 +232,86 @@ export class TodoistService {
         sectionId?: string
         expectedCount?: number
     }): Promise<SyncTask[]> {
+        const windows = Array.from(this.generateDateWindows())
         const allItems: SyncTask[] = []
+        let countedItems = 0
         let consecutiveEmptyWindows = 0
+        let batchSize = 1
 
-        for (const { since, until } of this.generateDateWindows()) {
-            const windowItems = await this.fetchCompletedTasksForWindow({
-                token,
-                since,
-                until,
-                projectId,
-                taskId,
-                sectionId,
-            })
-            allItems.push(...windowItems)
+        for (let start = 0; start < windows.length; ) {
+            const batch = windows.slice(start, start + batchSize)
+            start += batch.length
 
-            if (windowItems.length === 0) {
-                consecutiveEmptyWindows++
-                if (consecutiveEmptyWindows >= CONSECUTIVE_EMPTY_WINDOW_THRESHOLD) {
-                    break
-                }
-            } else {
-                consecutiveEmptyWindows = 0
+            // Only scans with a count use parallel batches; scans without one stay sequential
+            if (expectedCount !== undefined) {
+                batchSize = Math.min(batchSize * 2, MAX_CONCURRENT_WINDOWS)
             }
 
-            if (expectedCount !== undefined && allItems.length >= expectedCount) {
-                break
+            const results = await Promise.allSettled(
+                batch.map(({ since, until }) =>
+                    this.fetchCompletedTasksForWindow({
+                        token,
+                        since,
+                        until,
+                        projectId,
+                        taskId,
+                        sectionId,
+                    }),
+                ),
+            )
+
+            for (const result of results) {
+                // Throw only for windows a sequential scan would reach; we return before later ones
+                if (result.status === 'rejected') {
+                    throw result.reason
+                }
+
+                const windowItems = result.value
+                allItems.push(...windowItems)
+
+                if (expectedCount === undefined) {
+                    consecutiveEmptyWindows =
+                        windowItems.length === 0 ? consecutiveEmptyWindows + 1 : 0
+
+                    if (consecutiveEmptyWindows >= CONSECUTIVE_EMPTY_WINDOW_THRESHOLD) {
+                        return allItems
+                    }
+                } else {
+                    // Project and section queries also return nested tasks counted elsewhere
+                    countedItems += windowItems.filter((item) =>
+                        this.isCountedByCompletedInfo(item, { projectId, taskId }),
+                    ).length
+
+                    if (countedItems >= expectedCount) {
+                        return allItems
+                    }
+                }
             }
         }
 
         return allItems
+    }
+
+    /**
+     * Checks whether completed_info counts a task towards the queried entity.
+     *
+     * completed_info only counts direct children: a subtask counts towards its parent task, and a
+     * task in a section counts towards that section. However, project and section queries also
+     * return the nested tasks, which must not count towards their expectedCount.
+     */
+    private isCountedByCompletedInfo(
+        task: SyncTask,
+        { projectId, taskId }: { projectId?: string; taskId?: string },
+    ): boolean {
+        if (projectId) {
+            return !task.parent_id && !task.section_id
+        }
+
+        if (taskId) {
+            return true
+        }
+
+        return !task.parent_id
     }
 
     /**
