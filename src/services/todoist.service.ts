@@ -247,26 +247,24 @@ export class TodoistService {
                 batchSize = Math.min(batchSize * 2, MAX_CONCURRENT_WINDOWS)
             }
 
-            const results = await Promise.allSettled(
-                batch.map(({ since, until }) =>
-                    this.fetchCompletedTasksForWindow({
-                        token,
-                        since,
-                        until,
-                        projectId,
-                        taskId,
-                        sectionId,
-                    }),
-                ),
+            const requests = batch.map(({ since, until }) =>
+                this.fetchCompletedTasksForWindow({
+                    token,
+                    since,
+                    until,
+                    projectId,
+                    taskId,
+                    sectionId,
+                }),
             )
 
-            for (const result of results) {
-                // Throw only for windows a sequential scan would reach; we return before later ones
-                if (result.status === 'rejected') {
-                    throw result.reason
-                }
+            // Windows we stop waiting for after returning must not cause unhandled rejections
+            for (const request of requests) {
+                request.catch(() => undefined)
+            }
 
-                const windowItems = result.value
+            for (const request of requests) {
+                const windowItems = await request
                 allItems.push(...windowItems)
 
                 if (expectedCount === undefined) {
