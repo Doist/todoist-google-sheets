@@ -459,6 +459,80 @@ describe('ActionsService', () => {
             )
         })
 
+        it('exports completed tasks returned by both project and section queries once', async () => {
+            setupGetUser(buildUser())
+            setupGetGoogleToken('kwijibo')
+            setupGetAppToken('kwijibo')
+
+            jest.spyOn(TodoistApi.prototype, 'getTasks').mockImplementation(() =>
+                Promise.resolve({ results: [], nextCursor: null }),
+            )
+            jest.spyOn(TodoistApi.prototype, 'getSections').mockImplementation(() =>
+                Promise.resolve({
+                    results: [{ id: 'section1', projectId: '1234', name: 'Section 1' } as Section],
+                    nextCursor: null,
+                }),
+            )
+            jest.spyOn(TodoistService.prototype, 'getCompletedInfo').mockImplementation(() =>
+                Promise.resolve([
+                    { project_id: '1234', completed_items: 1 },
+                    { section_id: 'section1', completed_items: 1 },
+                ]),
+            )
+
+            const rootTask = { id: 'task1', projectId: '1234', isCompleted: true } as Task
+            const sectionTask = {
+                id: 'task2',
+                projectId: '1234',
+                sectionId: 'section1',
+                isCompleted: true,
+            } as Task
+
+            jest.spyOn(TodoistService.prototype, 'getCompletedTasks').mockImplementation(
+                ({ projectId, sectionId }) => {
+                    if (projectId === '1234') {
+                        return Promise.resolve([rootTask, sectionTask])
+                    }
+                    if (sectionId === 'section1') {
+                        return Promise.resolve([sectionTask])
+                    }
+                    return Promise.resolve([])
+                },
+            )
+
+            jest.spyOn(target['googleSheetsService'], 'exportToSheets').mockImplementation(() =>
+                Promise.resolve('https://docs.google.com'),
+            )
+            const convertTasksToCsvString = jest
+                .spyOn(csvHelpers, 'convertTasksToCsvString')
+                .mockImplementation(() => 'csv')
+
+            await target.export({
+                context: { user: { id: 42 } as DoistCardContextUser, theme: 'light' },
+                action: {
+                    actionType: 'submit',
+                    actionId: SheetCardActions.Export,
+                    params: {
+                        source: 'project',
+                        sourceId: '1234',
+                        url: 'https://google.com',
+                        content: 'My Project',
+                        contentPlain: 'My Project',
+                    } as ContextMenuData,
+                    inputs: {
+                        [Inputs.IncludeCompleted]: 'true',
+                        'Input.section': 'true',
+                    },
+                },
+                extensionType: 'context-menu',
+                maximumDoistCardVersion: 0.5,
+            })
+
+            expect(convertTasksToCsvString).toHaveBeenCalledWith(
+                expect.objectContaining({ tasks: [rootTask, sectionTask] }),
+            )
+        })
+
         it('recursively fetches completed subtasks of completed tasks', async () => {
             setupGetUser(buildUser())
             setupGetGoogleToken('kwijibo')

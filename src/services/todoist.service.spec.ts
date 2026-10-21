@@ -1,6 +1,7 @@
 import { HttpModule } from '@nestjs/axios'
 import { Test } from '@nestjs/testing'
 import { chunk } from 'lodash'
+import MockDate from 'mockdate'
 import { rest } from 'msw'
 
 import { server } from '../../test/server'
@@ -15,6 +16,7 @@ describe('TodoistService', () => {
     afterEach(() => {
         server.resetHandlers()
         jest.resetAllMocks()
+        MockDate.reset()
     })
 
     afterAll(() => server.close())
@@ -195,6 +197,91 @@ describe('TodoistService', () => {
             expect(result).toHaveLength(2)
         })
 
+        it('should keep scanning past empty windows until expectedCount is reached', async () => {
+            MockDate.set('2026-10-20T09:00:00Z')
+            setupGetCompletedItemsByDate([
+                ...buildCompletedTasks('recent', 3, '2026-10-20T08:00:00Z'),
+                ...buildCompletedTasks('old', 5, '2020-09-25T12:00:00Z'),
+            ])
+            const target = await getTarget()
+
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+                expectedCount: 8,
+            })
+
+            expect(result).toHaveLength(8)
+        })
+
+        it('should only count tasks without a section or parent towards a project expectedCount', async () => {
+            MockDate.set('2026-10-20T09:00:00Z')
+            setupGetCompletedItemsByDate([
+                {
+                    id: 'section-task',
+                    section_id: 'section1',
+                    completed_at: '2026-10-19T00:00:00Z',
+                },
+                { id: 'subtask', parent_id: 'parent1', completed_at: '2026-10-19T00:00:00Z' },
+                { id: 'old-task', completed_at: '2020-09-25T12:00:00Z' },
+            ] as SyncTask[])
+            const target = await getTarget()
+
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+                expectedCount: 1,
+            })
+
+            expect(result.map((task) => task.id)).toEqual(['section-task', 'subtask', 'old-task'])
+        })
+
+        it('should only count tasks without a parent towards a section expectedCount', async () => {
+            MockDate.set('2026-10-20T09:00:00Z')
+            const requestedSince = setupGetCompletedItemsByDate([
+                {
+                    id: 'subtask',
+                    section_id: 'section1',
+                    parent_id: 'parent1',
+                    completed_at: '2026-10-19T00:00:00Z',
+                },
+                { id: 'old-task', section_id: 'section1', completed_at: '2020-09-25T12:00:00Z' },
+            ] as SyncTask[])
+            const target = await getTarget()
+
+            const result = await target.getCompletedTasks({
+                sectionId: 'section1',
+                token: 'kwijibo',
+                expectedCount: 1,
+            })
+
+            const oldestSince = new Date(
+                Math.min(...requestedSince.map((since) => since.getTime())),
+            )
+            expect(result.map((task) => task.id)).toEqual(['subtask', 'old-task'])
+            expect(oldestSince.getUTCFullYear()).toBeGreaterThan(2006)
+        })
+
+        it('should ignore failed windows past the window where expectedCount is reached', async () => {
+            MockDate.set('2026-10-20T09:00:00Z')
+            setupGetCompletedItemsByDate(
+                [
+                    ...buildCompletedTasks('recent', 1, '2026-10-19T00:00:00Z'),
+                    ...buildCompletedTasks('older', 1, '2026-06-01T00:00:00Z'),
+                ],
+                { failUntilBefore: '2026-05-01T00:00:00Z' },
+            )
+            const target = await getTarget()
+
+            const result = await target.getCompletedTasks({
+                projectId: '123',
+                token: 'kwijibo',
+                expectedCount: 2,
+            })
+
+            expect(result.map((task) => task.id)).toEqual(['recent-0', 'older-0'])
+        })
+
         it('should handle pagination via next_cursor within a window', async () => {
             const page1Items = Array(100).fill({}) as SyncTask[]
             const page2Items = [{}] as SyncTask[]
@@ -320,6 +407,46 @@ describe('TodoistService', () => {
                 },
             ),
         )
+    }
+
+    function buildCompletedTasks(prefix: string, count: number, completedAt: string): SyncTask[] {
+        return Array.from(
+            { length: count },
+            (_, index) => ({ id: `${prefix}-${index}`, completed_at: completedAt } as SyncTask),
+        )
+    }
+
+    function setupGetCompletedItemsByDate(
+        items: SyncTask[],
+        { failUntilBefore }: { failUntilBefore?: string } = {},
+    ) {
+        const requestedSince: Date[] = []
+
+        server.use(
+            rest.get(
+                'https://api.todoist.com/api/v1/tasks/completed/by_completion_date',
+                (req, res, ctx) => {
+                    const since = new Date(req.url.searchParams.get('since') ?? '')
+                    const until = new Date(req.url.searchParams.get('until') ?? '')
+                    requestedSince.push(since)
+
+                    if (failUntilBefore && until < new Date(failUntilBefore)) {
+                        return res(ctx.status(500))
+                    }
+
+                    return res(
+                        ctx.json({
+                            items: items.filter((item) => {
+                                const completedAt = new Date(item.completed_at)
+                                return completedAt >= since && completedAt < until
+                            }),
+                        }),
+                    )
+                },
+            ),
+        )
+
+        return requestedSince
     }
 
     async function getTarget() {
