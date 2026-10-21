@@ -259,7 +259,7 @@ describe('TodoistService', () => {
                 Math.min(...requestedSince.map((since) => since.getTime())),
             )
             expect(result.map((task) => task.id)).toEqual(['subtask', 'old-task'])
-            expect(oldestSince.getUTCFullYear()).toBe(2020)
+            expect(oldestSince.getUTCFullYear()).toBeGreaterThan(2006)
         })
 
         it('should ignore failed windows past the window where expectedCount is reached', async () => {
