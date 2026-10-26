@@ -224,7 +224,7 @@ export class ActionsService extends ActionsServiceBase {
                 token: appToken,
                 projectId: contextData.sourceId,
             }),
-            exportOptions['section']
+            exportOptions['section'] || exportOptions.includeCompleted
                 ? this.todoistService.getProjectSections({
                       token: appToken,
                       projectId: contextData.sourceId,
